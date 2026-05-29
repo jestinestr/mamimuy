@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Titipan Belanja</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #FDF8F5;
+      --surface: #FFFFFF;
+      --pink: #E8B4B8;
+      --pink-dark: #C9848D;
+      --pink-mid: #D4919A;
+      --pink-light: #FAF0F1;
+      --text: #3D3535;
+      --text-light: #9E8585;
+      --border: #EDE0DC;
+      --green: #8BBD8B;
+      --green-bg: #F0F8EF;
+      --red: #D46868;
+      --red-bg: #FFF0F0;
+      --red-border: #F5CCCC;
+      --shadow: 0 2px 20px rgba(180, 120, 120, 0.10);
+      --shadow-hover: 0 8px 32px rgba(180, 120, 120, 0.20);
+      --radius: 16px;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ─────────────────────────────────────
+       PUBLIC VIEW
+    ───────────────────────────────────── */
+    #public-view { min-height: 100vh; padding-bottom: 72px; }
+
+    .public-header {
+      text-align: center;
+      padding: 52px 24px 36px;
+      background: linear-gradient(160deg, #FFF4F5 0%, #FDF8F5 55%, #F5F0FA 100%);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 36px;
+    }
+
+    .public-header .subtitle {
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--pink-mid);
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .public-header h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(32px, 8vw, 54px);
+      font-weight: 300;
+      color: var(--text);
+      line-height: 1.15;
+    }
+
+    .public-header h1 em {
+      color: var(--pink-dark);
+      font-style: italic;
+    }
+
+    .public-header .tagline {
+      margin-top: 10px;
+      color: var(--text-light);
+      font-size: 14px;
+      font-weight: 300;
+    }
+
+    .catalog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .product-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      position: relative;
+    }
+
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .product-card .img-wrap {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      background: var(--pink-light);
+    }
+
+    .product-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.35s ease;
+    }
+
+    .product-card:hover img { transform: scale(1.04); }
+
+    .product-card .no-img {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 52px;
+      color: var(--pink);
+    }
+
+    .product-card .card-body {
+      padding: 14px 16px 18px;
+    }
+
+    .product-card .card-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 5px;
+      line-height: 1.4;
+    }
+
+    .product-card .card-price {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--pink-dark);
+    }
+
+    .ordered-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: var(--green);
+      color: #fff;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 4px 9px;
+      border-radius: 20px;
+      letter-spacing: 0.03em;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.13);
+    }
+
+    .empty-catalog {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 90px 20px;
+      color: var(--text-light);
+    }
+
+    .empty-catalog .empty-icon { font-size: 60px; margin-bottom: 18px; opacity: 0.45; }
+
+    .empty-catalog p {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 300;
+      font-style: italic;
+    }
+
+    /* Hidden lock button */
+    #lock-btn {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      width: 30px;
+      height: 30px;
+      background: rgba(255,255,255,0.55);
+      border: 1px solid rgba(180,140,140,0.25);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      opacity: 0.18;
+      transition: opacity 0.3s;
+      color: var(--text-light);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+    }
+    #lock-btn:hover { opacity: 0.70; }
+
+    /* ─────────────────────────────────────
+       LOGIN MODAL
+    ───────────────────────────────────── */
+    #login-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(50, 38, 38, 0.42);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    #login-modal.active { display: flex; }
+
+    .login-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 42px 36px;
+      width: 100%;
+      max-width: 360px;
+      margin: 20px;
+      box-shadow: 0 24px 60px rgba(180, 100, 100, 0.22);
+      animation: popIn 0.28s cubic-bezier(0.34,1.36,0.64,1);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.88) translateY(16px); opacity: 0; }
+      to   { transform: scale(1)    translateY(0);    opacity: 1; }
+    }
+
+    .login-card .lock-icon {
+      text-align: center;
+      font-size: 36px;
+      margin-bottom: 16px;
+    }
+
+    .login-card h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 400;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .login-card .login-desc {
+      text-align: center;
+      color: var(--text-light);
+      font-size: 13px;
+      margin-bottom: 28px;
+    }
+
+    .form-group { margin-bottom: 14px; }
+
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-light);
+      margin-bottom: 6px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 15px;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-group input:focus {
+      border-color: var(--pink);
+      box-shadow: 0 0 0 3px rgba(232, 180, 184, 0.22);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--pink) 0%, var(--pink-dark) 100%);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(201, 132, 141, 0.40);
+      margin-top: 6px;
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 22px rgba(201, 132, 141, 0.50);
+    }
+
+    .btn-ghost {
+      width: 100%;
+      padding: 11px;
+      background: transparent;
+      color: var(--text-light);
+      border: none;
+      border-radius: 12px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 6px;
+    }
+    .btn-ghost:hover { background: var(--bg); color: var(--text); }
+
+    .login-error {
+      color: var(--red);
+      font-size: 13px;
+      text-align: center;
+      margin-top: 12px;
+      display: none;
+      animation: shake 0.35s ease;
+    }
+    .login-error.show { display: block; }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-6px); }
+      75%      { transform: translateX(6px); }
+    }
+
+    /* ─────────────────────────────────────
+       ADMIN VIEW
+    ───────────────────────────────────── */
+    #admin-view { display: none; min-height: 100vh; }
+    #admin-view.active { display: block; }
+
+    .admin-header {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 2px 16px rgba(180, 120, 120, 0.09);
+    }
+
+    .admin-header h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 400;
+    }
+    .admin-header h1 em { color: var(--pink-dark); font-style: italic; }
+
+    .btn-logout {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 8px 16px;
+      background: var(--pink-light);
+      color: var(--pink-dark);
+      border: 1.5px solid var(--pink);
+      border-radius: 10px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-logout:hover { background: var(--pink); color: #fff; border-color: var(--pink); }
+
+    .admin-content {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    /* Add product card */
+    .add-product-card {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 28px 28px 24px;
+      margin-bottom: 36px;
+      box-shadow: var(--shadow);
+    }
+
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .add-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 560px) {
+      .add-form-grid { grid-template-columns: 1fr; }
+    }
+
+    .img-upload-area {
+      grid-column: 1 / -1;
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 22px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.22s;
+      background: var(--bg);
+      position: relative;
+      min-height: 110px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .img-upload-area:hover,
+    .img-upload-area.dragover {
+      border-color: var(--pink-mid);
+      background: var(--pink-light);
+    }
+
+    .img-upload-area input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .upload-inner { pointer-events: none; }
+
+    .upload-preview {
+      width: 88px;
+      height: 88px;
+      object-fit: cover;
+      border-radius: 10px;
+      display: none;
+      margin-bottom: 6px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    }
+    .upload-preview.show { display: inline-block; }
+
+    .upload-icon { font-size: 34px; color: var(--pink); margin-bottom: 6px; }
+
+    .upload-text { font-size: 13px; color: var(--text-light); line-height: 1.6; }
+    .upload-text strong { color: var(--pink-dark); }
+
+    .add-form-grid .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-light);
+      margin-bottom: 6px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .add-form-grid .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .add-form-grid .form-group input:focus {
+      border-color: var(--pink);
+      box-shadow: 0 0 0 3px rgba(232, 180, 184, 0.22);
+    }
+    .add-form-grid .form-group input.error { border-color: var(--red) !important; }
+
+    .add-form-footer {
+      margin-top: 18px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .btn-add {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 11px 26px;
+      background: linear-gradient(135deg, var(--pink) 0%, var(--pink-dark) 100%);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(201, 132, 141, 0.38);
+      letter-spacing: 0.02em;
+    }
+    .btn-add:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 22px rgba(201, 132, 141, 0.48);
+    }
+
+    /* Admin product list */
+    .products-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .admin-product-item {
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: var(--shadow);
+      border: 1.5px solid transparent;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .admin-product-item.ordered {
+      border-color: var(--green);
+      background: var(--green-bg);
+    }
+
+    .admin-thumb {
+      width: 60px;
+      height: 60px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .admin-thumb-placeholder {
+      width: 60px;
+      height: 60px;
+      border-radius: 10px;
+      background: var(--pink-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: var(--pink);
+      flex-shrink: 0;
+    }
+
+    .admin-product-info { flex: 1; min-width: 0; }
+
+    .admin-product-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .admin-product-price {
+      font-size: 13px;
+      color: var(--pink-dark);
+      font-weight: 700;
+    }
+
+    .admin-product-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .ordered-check {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 12.5px;
+      color: var(--text-light);
+      font-weight: 600;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .ordered-check input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      accent-color: var(--green);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .btn-delete {
+      background: var(--red-bg);
+      color: var(--red);
+      border: 1px solid var(--red-border);
+      border-radius: 8px;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 15px;
+      transition: all 0.18s;
+      flex-shrink: 0;
+    }
+    .btn-delete:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+    .empty-admin {
+      text-align: center;
+      padding: 50px 20px;
+      color: var(--text-light);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-style: italic;
+    }
+
+    /* Counter badge */
+    .product-count {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--pink-light);
+      color: var(--pink-dark);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 480px) {
+      .admin-product-item { flex-wrap: wrap; }
+      .admin-product-actions { width: 100%; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 10px; margin-top: 2px; }
+      .add-product-card { padding: 20px 16px; }
+      .admin-content { padding: 20px 14px 80px; }
+      .catalog-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════
+     PUBLIC VIEW
+═══════════════════════════════════ -->
+<div id="public-view">
+  <header class="public-header">
+    <p class="subtitle">✦ Daftar Titipan ✦</p>
+    <h1>Katalog <em>Belanja</em></h1>
+    <p class="tagline">Ini ya Ma, barang-barang yang mau dipesan 🛍️</p>
+  </header>
+
+  <div class="catalog-grid" id="catalog-grid">
+    <!-- rendered by JS -->
+  </div>
+
+  <button id="lock-btn" title="Admin" aria-label="Admin login">🔒</button>
+</div>
+
+
+<!-- ═══════════════════════════════════
+     LOGIN MODAL
+═══════════════════════════════════ -->
+<div id="login-modal" role="dialog" aria-modal="true" aria-label="Login admin">
+  <div class="login-card">
+    <div class="lock-icon">🔐</div>
+    <h2>Admin</h2>
+    <p class="login-desc">Masuk untuk mengelola katalog</p>
+
+    <div class="form-group">
+      <label for="login-user">Username</label>
+      <input type="text" id="login-user" placeholder="username" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label for="login-pass">Password</label>
+      <input type="password" id="login-pass" placeholder="••••" autocomplete="current-password">
+    </div>
+
+    <button class="btn-primary" id="login-btn">Masuk</button>
+    <button class="btn-ghost" id="login-cancel">Batal</button>
+
+    <div class="login-error" id="login-error">Username atau password salah.</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════
+     ADMIN VIEW
+═══════════════════════════════════ -->
+<div id="admin-view">
+  <header class="admin-header">
+    <h1>Kelola <em>Katalog</em></h1>
+    <button class="btn-logout" id="logout-btn">
+      <span>←</span> Keluar
+    </button>
+  </header>
+
+  <div class="admin-content">
+
+    <!-- Add product form -->
+    <div class="add-product-card">
+      <h2 class="section-title">Tambah Produk</h2>
+
+      <div class="add-form-grid">
+        <!-- Image upload -->
+        <div class="img-upload-area" id="upload-area">
+          <input type="file" id="img-input" accept="image/*">
+          <div class="upload-inner" id="upload-inner">
+            <img class="upload-preview" id="upload-preview" alt="Preview foto">
+            <div id="upload-placeholder">
+              <div class="upload-icon">🖼️</div>
+              <div class="upload-text">
+                <strong>Klik atau seret foto</strong> ke sini<br>
+                <small>JPG · PNG · WEBP</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Name -->
+        <div class="form-group">
+          <label for="prod-name">Nama Produk</label>
+          <input type="text" id="prod-name" placeholder="cth. Tas Kulit Coklat…">
+        </div>
+
+        <!-- Price -->
+        <div class="form-group">
+          <label for="prod-price">Harga</label>
+          <input type="text" id="prod-price" placeholder="cth. 150000">
+        </div>
+      </div>
+
+      <div class="add-form-footer">
+        <button class="btn-add" id="add-btn">
+          <span>＋</span> Simpan Produk
+        </button>
+      </div>
+    </div>
+
+    <!-- Product list -->
+    <h2 class="section-title">
+      Semua Produk
+      <span class="product-count" id="product-count">0</span>
+    </h2>
+
+    <div class="products-list" id="admin-list">
+      <!-- rendered by JS -->
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+  /* ─────────────────────────────────────
+     STATE & STORAGE
+  ───────────────────────────────────── */
+  const STORAGE_KEY = 'titipan_katalog_v1';
+
+  let products = (() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+    catch { return []; }
+  })();
+
+  let pendingImage = null; // base64 string or null
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+  }
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
+  }
+
+  /* ─────────────────────────────────────
+     PRICE FORMATTING
+  ───────────────────────────────────── */
+  function formatRupiah(raw) {
+    if (!raw) return '';
+    const digits = raw.toString().replace(/\D/g, '');
+    if (!digits) return raw;
+    return 'Rp ' + parseInt(digits, 10).toLocaleString('id-ID');
+  }
+
+  /* ─────────────────────────────────────
+     HTML ESCAPE
+  ───────────────────────────────────── */
+  function esc(str) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(str ?? ''));
+    return d.innerHTML;
+  }
+
+  /* ─────────────────────────────────────
+     RENDER — PUBLIC
+  ───────────────────────────────────── */
+  function renderPublic() {
+    const grid = document.getElementById('catalog-grid');
+
+    if (!products.length) {
+      grid.innerHTML = `
+        <div class="empty-catalog">
+          <div class="empty-icon">🛍️</div>
+          <p>Katalog masih kosong</p>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = products.map(p => `
+      <div class="product-card">
+        ${p.ordered ? '<div class="ordered-badge">✓ Sudah Diorder</div>' : ''}
+        <div class="img-wrap">
+          ${p.image
+            ? `<img src="${p.image}" alt="${esc(p.name)}" loading="lazy">`
+            : `<div class="no-img">🛍️</div>`}
+        </div>
+        <div class="card-body">
+          <div class="card-name">${esc(p.name)}</div>
+          <div class="card-price">${esc(p.price)}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  /* ─────────────────────────────────────
+     RENDER — ADMIN
+  ───────────────────────────────────── */
+  function renderAdmin() {
+    const list  = document.getElementById('admin-list');
+    const count = document.getElementById('product-count');
+
+    count.textContent = products.length;
+
+    if (!products.length) {
+      list.innerHTML = `<div class="empty-admin">Belum ada produk. Tambahkan produk di atas 🌸</div>`;
+      return;
+    }
+
+    list.innerHTML = products.map(p => `
+      <div class="admin-product-item ${p.ordered ? 'ordered' : ''}" data-id="${p.id}">
+        ${p.image
+          ? `<img class="admin-thumb" src="${p.image}" alt="${esc(p.name)}">`
+          : `<div class="admin-thumb-placeholder">🛍️</div>`}
+        <div class="admin-product-info">
+          <div class="admin-product-name">${esc(p.name)}</div>
+          <div class="admin-product-price">${esc(p.price)}</div>
+        </div>
+        <div class="admin-product-actions">
+          <label class="ordered-check">
+            <input type="checkbox" ${p.ordered ? 'checked' : ''}
+              onchange="toggleOrdered('${p.id}', this.checked)">
+            Sudah dibeli
+          </label>
+          <button class="btn-delete" onclick="deleteProduct('${p.id}')" title="Hapus produk">🗑️</button>
+        </div>
+      </div>`).join('');
+  }
+
+  /* ─────────────────────────────────────
+     PRODUCT ACTIONS
+  ───────────────────────────────────── */
+  function toggleOrdered(id, checked) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    p.ordered = checked;
+    save();
+    renderAdmin();
+    renderPublic();
+  }
+
+  function deleteProduct(id) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    if (!confirm(`Hapus "${p.name}"?`)) return;
+    products = products.filter(x => x.id !== id);
+    save();
+    renderAdmin();
+    renderPublic();
+  }
+
+  /* ─────────────────────────────────────
+     IMAGE UPLOAD
+  ───────────────────────────────────── */
+  function applyImagePreview(base64) {
+    pendingImage = base64;
+    const preview     = document.getElementById('upload-preview');
+    const placeholder = document.getElementById('upload-placeholder');
+    preview.src = base64;
+    preview.classList.add('show');
+    placeholder.classList.add('hidden');
+  }
+
+  function resetImageInput() {
+    pendingImage = null;
+    const preview     = document.getElementById('upload-preview');
+    const placeholder = document.getElementById('upload-placeholder');
+    preview.src = '';
+    preview.classList.remove('show');
+    placeholder.classList.remove('hidden');
+    document.getElementById('img-input').value = '';
+  }
+
+  document.getElementById('img-input').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => applyImagePreview(ev.target.result);
+    reader.readAsDataURL(file);
+  });
+
+  const uploadArea = document.getElementById('upload-area');
+  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+  uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = ev => applyImagePreview(ev.target.result);
+      reader.readAsDataURL(file);
+    }
+  });
+
+  /* ─────────────────────────────────────
+     ADD PRODUCT
+  ───────────────────────────────────── */
+  function flashError(el) {
+    el.classList.add('error');
+    el.focus();
+    setTimeout(() => el.classList.remove('error'), 1600);
+  }
+
+  document.getElementById('add-btn').addEventListener('click', () => {
+    const nameEl  = document.getElementById('prod-name');
+    const priceEl = document.getElementById('prod-price');
+    const name    = nameEl.value.trim();
+    const priceRaw= priceEl.value.trim();
+
+    if (!name)     { flashError(nameEl);  return; }
+    if (!priceRaw) { flashError(priceEl); return; }
+
+    products.push({
+      id     : uid(),
+      name,
+      price  : formatRupiah(priceRaw),
+      image  : pendingImage,
+      ordered: false
+    });
+
+    save();
+    renderPublic();
+    renderAdmin();
+
+    // Reset form
+    nameEl.value  = '';
+    priceEl.value = '';
+    resetImageInput();
+  });
+
+  // Auto-format price on blur
+  document.getElementById('prod-price').addEventListener('blur', function () {
+    if (this.value.trim()) this.value = formatRupiah(this.value.trim());
+  });
+
+  /* ─────────────────────────────────────
+     AUTH
+  ───────────────────────────────────── */
+  const CREDS = { user: 'jen', pass: '0878' };
+
+  function showLoginModal() {
+    const modal = document.getElementById('login-modal');
+    modal.classList.add('active');
+    document.getElementById('login-user').value = '';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-error').classList.remove('show');
+    setTimeout(() => document.getElementById('login-user').focus(), 80);
+  }
+
+  function hideLoginModal() {
+    document.getElementById('login-modal').classList.remove('active');
+  }
+
+  function goAdmin() {
+    document.getElementById('public-view').style.display  = 'none';
+    document.getElementById('admin-view').classList.add('active');
+    renderAdmin();
+  }
+
+  function goPublic() {
+    document.getElementById('public-view').style.display  = '';
+    document.getElementById('admin-view').classList.remove('active');
+    renderPublic();
+  }
+
+  function attemptLogin() {
+    const u = document.getElementById('login-user').value;
+    const p = document.getElementById('login-pass').value;
+    if (u === CREDS.user && p === CREDS.pass) {
+      hideLoginModal();
+      goAdmin();
+    } else {
+      const err = document.getElementById('login-error');
+      err.classList.remove('show');
+      void err.offsetWidth; // restart animation
+      err.classList.add('show');
+      document.getElementById('login-pass').value = '';
+      document.getElementById('login-pass').focus();
+    }
+  }
+
+  document.getElementById('lock-btn').addEventListener('click', showLoginModal);
+  document.getElementById('login-cancel').addEventListener('click', hideLoginModal);
+  document.getElementById('login-btn').addEventListener('click', attemptLogin);
+  document.getElementById('logout-btn').addEventListener('click', goPublic);
+
+  document.getElementById('login-pass').addEventListener('keydown', e => {
+    if (e.key === 'Enter') attemptLogin();
+  });
+  document.getElementById('login-user').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('login-pass').focus();
+  });
+
+  // Close modal on backdrop click
+  document.getElementById('login-modal').addEventListener('click', function (e) {
+    if (e.target === this) hideLoginModal();
+  });
+
+  /* ─────────────────────────────────────
+     INIT
+  ───────────────────────────────────── */
+  renderPublic();
+</script>
+</body>
+</html>
