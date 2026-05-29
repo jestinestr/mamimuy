@@ -598,6 +598,53 @@
     }
     .duck-speech.visible { opacity: 1; transform: translateY(0) scale(1); }
 
+    /* ── Fullscreen Zoom Viewer ── */
+    #fz-overlay {
+      display: none; position: fixed; inset: 0;
+      background: #000; z-index: 1600;
+      align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    #fz-overlay.active { display: flex; }
+
+    #fz-img {
+      max-width: 100vw; max-height: 100vh;
+      object-fit: contain;
+      transform-origin: 0 0;
+      user-select: none; -webkit-user-drag: none;
+      cursor: grab; will-change: transform;
+      display: block;
+    }
+    #fz-img.grabbing { cursor: grabbing; }
+
+    #fz-close-btn {
+      position: absolute; top: 16px; right: 16px;
+      width: 38px; height: 38px; z-index: 2;
+      background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25);
+      border-radius: 50%; color: white; font-size: 16px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background .2s;
+    }
+    #fz-close-btn:hover { background: rgba(255,255,255,.3); }
+
+    #fz-hint {
+      position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,255,255,.13); border-radius: 20px; padding: 6px 18px;
+      color: rgba(255,255,255,.65); font-size: 12px; font-weight: 600;
+      pointer-events: none; white-space: nowrap; transition: opacity .5s;
+    }
+    #fz-hint.hide { opacity: 0; }
+
+    /* Zoom cursor on detail image */
+    .detail-img-wrap { cursor: zoom-in; }
+    .detail-img-wrap .zoom-hint {
+      position: absolute; bottom: 10px; right: 10px;
+      background: rgba(0,0,0,.38); backdrop-filter: blur(4px);
+      color: white; font-size: 11px; font-weight: 700;
+      padding: 4px 10px; border-radius: 12px;
+      pointer-events: none; letter-spacing: .04em;
+    }
+
     .hidden { display: none !important; }
   </style>
 </head>
@@ -637,13 +684,22 @@
 </div>
 
 <!-- ═══════════════════════════════════════
+     FULLSCREEN ZOOM VIEWER
+════════════════════════════════════════ -->
+<div id="fz-overlay">
+  <img id="fz-img" alt="produk">
+  <button id="fz-close-btn">✕</button>
+  <div id="fz-hint">🤏 cubit untuk zoom · dua kali tap untuk zoom · seret untuk geser</div>
+</div>
+
+<!-- ═══════════════════════════════════════
      DETAIL LIGHTBOX
 ════════════════════════════════════════ -->
 <div id="detail-modal">
   <div class="detail-backdrop" id="detail-backdrop"></div>
   <div class="detail-card">
     <button class="detail-close" id="detail-close">✕</button>
-    <div class="detail-img-wrap" id="detail-img-wrap"></div>
+    <div class="detail-img-wrap" id="detail-img-wrap" style="position:relative"></div>
     <div class="detail-info">
       <div class="detail-prices">
         <div class="detail-cny" id="detail-cny"></div>
@@ -1063,9 +1119,17 @@
     const p = products.find(x => x.id === id);
     if (!p) return;
     detailId = id;
-    document.getElementById('detail-img-wrap').innerHTML = p.image_url
-      ? `<img src="${esc(p.image_url)}" alt="produk">`
-      : `<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:72px;color:var(--pink);">🛍️</div>`;
+    const imgWrap = document.getElementById('detail-img-wrap');
+    if (p.image_url) {
+      imgWrap.innerHTML = `
+        <img src="${esc(p.image_url)}" alt="produk" id="detail-main-img">
+        <div class="zoom-hint">🔍 tap untuk zoom</div>`;
+      document.getElementById('detail-main-img').addEventListener('click', () => {
+        openFzOverlay(p.image_url);
+      });
+    } else {
+      imgWrap.innerHTML = `<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:72px;color:var(--pink);">🛍️</div>`;
+    }
     document.getElementById('detail-cny').textContent = fmtYuan(p.price);
     document.getElementById('detail-idr').textContent = fmtIDR(p.price);
     updateDetailHeartBtn(p);
@@ -1292,6 +1356,155 @@
   }
   duckWrap.addEventListener('click', duckQuack);
   setTimeout(duckQuack, 4000);
+
+  /* ─────────────────────────────────────
+     FULLSCREEN ZOOM VIEWER
+  ───────────────────────────────────── */
+  (function () {
+    const overlay = document.getElementById('fz-overlay');
+    const img     = document.getElementById('fz-img');
+    const hint    = document.getElementById('fz-hint');
+    const closeBtn= document.getElementById('fz-close-btn');
+
+    let scale = 1, tx = 0, ty = 0;
+    let dragging = false, dragX = 0, dragY = 0;
+    let lastTap = 0, hintTimer;
+
+    function applyTransform(smooth) {
+      img.style.transition = smooth ? 'transform .22s ease' : 'none';
+      img.style.transform  = `translate(${tx}px,${ty}px) scale(${scale})`;
+    }
+
+    function clampTranslate() {
+      if (scale <= 1) { tx = 0; ty = 0; return; }
+      const maxX = (img.naturalWidth  * scale - window.innerWidth)  / 2;
+      const maxY = (img.naturalHeight * scale - window.innerHeight) / 2;
+      tx = Math.max(-Math.max(0,maxX), Math.min(Math.max(0,maxX), tx));
+      ty = Math.max(-Math.max(0,maxY), Math.min(Math.max(0,maxY), ty));
+    }
+
+    function hideHint() {
+      clearTimeout(hintTimer);
+      hintTimer = setTimeout(() => hint.classList.add('hide'), 2200);
+    }
+
+    window.openFzOverlay = function(src) {
+      img.src = src;
+      scale = 1; tx = 0; ty = 0;
+      applyTransform(false);
+      hint.classList.remove('hide');
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      hideHint();
+    };
+
+    function closeFz() {
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    closeBtn.addEventListener('click', closeFz);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeFz(); });
+
+    // ── Double tap to toggle zoom ──
+    img.addEventListener('click', e => {
+      const now = Date.now();
+      if (now - lastTap < 280) {
+        if (scale > 1) { scale = 1; tx = 0; ty = 0; }
+        else {
+          scale = 2.5;
+          // zoom toward tap point
+          const r  = img.getBoundingClientRect();
+          const cx = e.clientX - r.left - r.width / 2;
+          const cy = e.clientY - r.top  - r.height / 2;
+          tx = -cx * (scale - 1);
+          ty = -cy * (scale - 1);
+          clampTranslate();
+        }
+        applyTransform(true);
+        img.className = scale > 1 ? 'grabbing' : '';
+        setTimeout(() => img.className = scale > 1 ? '' : '', 220);
+      }
+      lastTap = now;
+    });
+
+    // ── Mouse wheel zoom ──
+    overlay.addEventListener('wheel', e => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.15 : 0.87;
+      const newScale = Math.max(1, Math.min(8, scale * factor));
+      if (newScale === 1) { scale = 1; tx = 0; ty = 0; }
+      else {
+        const r  = img.getBoundingClientRect();
+        const ox = e.clientX - r.left - r.width / 2;
+        const oy = e.clientY - r.top  - r.height / 2;
+        tx -= ox * (newScale / scale - 1);
+        ty -= oy * (newScale / scale - 1);
+        scale = newScale;
+        clampTranslate();
+      }
+      applyTransform(false);
+    }, { passive: false });
+
+    // ── Mouse drag to pan ──
+    img.addEventListener('mousedown', e => {
+      if (scale === 1) return;
+      dragging = true; dragX = e.clientX - tx; dragY = e.clientY - ty;
+      img.classList.add('grabbing');
+    });
+    window.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      tx = e.clientX - dragX; ty = e.clientY - dragY;
+      clampTranslate(); applyTransform(false);
+    });
+    window.addEventListener('mouseup', () => {
+      dragging = false; img.classList.remove('grabbing');
+    });
+
+    // ── Touch pinch to zoom ──
+    let pinchDist0 = 0, pinchScale0 = 1, pinchMidX = 0, pinchMidY = 0;
+    let singleTouchX = 0, singleTouchY = 0, singleTx0 = 0, singleTy0 = 0;
+
+    overlay.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) {
+        const t = e.touches;
+        pinchDist0  = Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+        pinchScale0 = scale;
+        const r = img.getBoundingClientRect();
+        pinchMidX = (t[0].clientX + t[1].clientX) / 2 - r.left - r.width / 2;
+        pinchMidY = (t[0].clientY + t[1].clientY) / 2 - r.top  - r.height / 2;
+      } else if (e.touches.length === 1 && scale > 1) {
+        singleTouchX = e.touches[0].clientX; singleTouchY = e.touches[0].clientY;
+        singleTx0 = tx; singleTy0 = ty;
+      }
+    }, { passive: true });
+
+    overlay.addEventListener('touchmove', e => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const t    = e.touches;
+        const dist = Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+        const newScale = Math.max(1, Math.min(8, pinchScale0 * (dist / pinchDist0)));
+        tx -= pinchMidX * (newScale / scale - 1);
+        ty -= pinchMidY * (newScale / scale - 1);
+        scale = newScale;
+        clampTranslate(); applyTransform(false);
+      } else if (e.touches.length === 1 && scale > 1) {
+        e.preventDefault();
+        tx = singleTx0 + e.touches[0].clientX - singleTouchX;
+        ty = singleTy0 + e.touches[0].clientY - singleTouchY;
+        clampTranslate(); applyTransform(false);
+      }
+    }, { passive: false });
+
+    overlay.addEventListener('touchend', () => {
+      if (scale < 1.05) { scale = 1; tx = 0; ty = 0; applyTransform(true); }
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && overlay.classList.contains('active')) closeFz();
+    });
+  })();
 
   /* ─────────────────────────────────────
      INIT
