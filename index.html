@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,6 +39,27 @@
       min-height: 100vh;
     }
 
+    /* ── Loading overlay ── */
+    #app-loading {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 9999; gap: 14px;
+      transition: opacity .4s;
+    }
+    #app-loading.fade { opacity: 0; pointer-events: none; }
+    #app-loading .spin {
+      font-size: 42px;
+      animation: spinning 1.4s linear infinite;
+      display: inline-block;
+    }
+    #app-loading p { font-size: 14px; color: var(--text-light); font-weight: 500; }
+    @keyframes spinning { to { transform: rotate(360deg); } }
+
+    /* ── Save spinner on buttons ── */
+    .saving { opacity: .6; pointer-events: none; }
+
     /* ═══════════════════════════════
        PUBLIC HEADER
     ═══════════════════════════════ */
@@ -51,38 +73,22 @@
       margin-bottom: 36px;
     }
     .public-header .subtitle {
-      font-size: 11.5px;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      color: var(--pink-mid);
-      font-weight: 600;
-      margin-bottom: 10px;
+      font-size: 11.5px; letter-spacing: .18em; text-transform: uppercase;
+      color: var(--pink-mid); font-weight: 600; margin-bottom: 10px;
     }
     .public-header h1 {
       font-family: 'Cormorant Garamond', serif;
-      font-size: clamp(30px,8vw,52px);
-      font-weight: 300;
-      line-height: 1.15;
+      font-size: clamp(30px,8vw,52px); font-weight: 300; line-height: 1.15;
     }
     .public-header h1 em { color: var(--pink-dark); font-style: italic; }
     .public-header .tagline {
-      margin-top: 10px;
-      color: var(--text-light);
-      font-size: 14px;
-      font-weight: 300;
+      margin-top: 10px; color: var(--text-light); font-size: 14px; font-weight: 300;
     }
     .public-header .rate-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      margin-top: 12px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 4px 12px;
-      font-size: 12px;
-      color: var(--text-light);
-      font-weight: 600;
+      display: inline-flex; align-items: center; gap: 5px;
+      margin-top: 12px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 20px;
+      padding: 4px 12px; font-size: 12px; color: var(--text-light); font-weight: 600;
     }
     .rate-pill span { color: var(--pink-dark); }
 
@@ -92,34 +98,23 @@
     .catalog-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-      gap: 18px;
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 0 20px;
+      gap: 18px; max-width: 1100px; margin: 0 auto; padding: 0 20px;
     }
 
     .product-card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      overflow: hidden;
-      box-shadow: var(--shadow);
+      background: var(--surface); border-radius: var(--radius);
+      overflow: hidden; box-shadow: var(--shadow);
       transition: transform .25s, box-shadow .25s;
-      position: relative;
-      cursor: pointer;
+      position: relative; cursor: pointer;
     }
     .product-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
-    .product-card:active { transform: translateY(-2px); }
 
     .product-card .img-wrap {
-      width: 100%;
-      aspect-ratio: 1;
-      overflow: hidden;
-      background: var(--pink-light);
-      position: relative;
+      width: 100%; aspect-ratio: 1; overflow: hidden;
+      background: var(--pink-light); position: relative;
     }
     .product-card img {
-      width: 100%; height: 100%;
-      object-fit: cover; display: block;
+      width: 100%; height: 100%; object-fit: cover; display: block;
       transition: transform .35s ease;
     }
     .product-card:hover img { transform: scale(1.05); }
@@ -129,67 +124,38 @@
       font-size: 48px; color: var(--pink);
     }
 
-    /* Heart button on card */
     .heart-btn {
-      position: absolute;
-      bottom: 10px; right: 10px;
+      position: absolute; bottom: 10px; right: 10px;
       width: 36px; height: 36px;
-      background: rgba(255,255,255,.88);
-      backdrop-filter: blur(4px);
-      border: none;
-      border-radius: 50%;
+      background: rgba(255,255,255,.88); backdrop-filter: blur(4px);
+      border: none; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 17px;
-      cursor: pointer;
+      font-size: 17px; cursor: pointer;
       box-shadow: 0 2px 10px rgba(0,0,0,.13);
-      transition: transform .15s, background .2s;
-      z-index: 2;
+      transition: transform .15s, background .2s; z-index: 2;
     }
     .heart-btn:hover { transform: scale(1.15); }
     .heart-btn.loved { background: #FFE8EC; }
     .heart-btn.popping { animation: heart-pop .38s ease; }
-
     @keyframes heart-pop {
-      0%   { transform: scale(1); }
-      35%  { transform: scale(1.55); }
-      65%  { transform: scale(.88); }
-      100% { transform: scale(1); }
+      0%  { transform: scale(1); }  35% { transform: scale(1.55); }
+      65% { transform: scale(.88); } 100% { transform: scale(1); }
     }
 
-    /* Ordered badge */
     .ordered-badge {
-      position: absolute;
-      top: 10px; left: 10px;
-      background: var(--green);
-      color: #fff;
+      position: absolute; top: 10px; left: 10px;
+      background: var(--green); color: #fff;
       font-size: 10.5px; font-weight: 700;
-      padding: 4px 9px;
-      border-radius: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.12);
-      z-index: 2;
+      padding: 4px 9px; border-radius: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.12); z-index: 2;
     }
 
-    /* Card price footer */
-    .card-body {
-      padding: 12px 14px 14px;
-    }
-    .card-price-cny {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--text);
-    }
-    .card-price-idr {
-      font-size: 12px;
-      color: var(--text-light);
-      font-weight: 500;
-      margin-top: 2px;
-    }
+    .card-body { padding: 12px 14px 14px; }
+    .card-price-cny { font-size: 17px; font-weight: 700; color: var(--text); }
+    .card-price-idr { font-size: 12px; color: var(--text-light); font-weight: 500; margin-top: 2px; }
 
     .empty-catalog {
-      grid-column: 1/-1;
-      text-align: center;
-      padding: 90px 20px;
-      color: var(--text-light);
+      grid-column: 1/-1; text-align: center; padding: 90px 20px; color: var(--text-light);
     }
     .empty-catalog .empty-icon { font-size: 58px; margin-bottom: 18px; opacity: .4; }
     .empty-catalog p {
@@ -197,20 +163,13 @@
       font-size: 21px; font-weight: 300; font-style: italic;
     }
 
-    /* Hidden lock button */
     #lock-btn {
-      position: fixed;
-      bottom: 18px; right: 18px;
+      position: fixed; bottom: 18px; right: 18px;
       width: 30px; height: 30px;
-      background: rgba(255,255,255,.55);
-      border: 1px solid rgba(180,140,140,.25);
-      border-radius: 50%;
-      cursor: pointer;
+      background: rgba(255,255,255,.55); border: 1px solid rgba(180,140,140,.25);
+      border-radius: 50%; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      font-size: 13px;
-      opacity: .16;
-      transition: opacity .3s;
-      z-index: 50;
+      font-size: 13px; opacity: .16; transition: opacity .3s; z-index: 50;
     }
     #lock-btn:hover { opacity: .70; }
 
@@ -218,112 +177,57 @@
        DETAIL LIGHTBOX
     ═══════════════════════════════ */
     #detail-modal {
-      display: none;
-      position: fixed; inset: 0;
-      z-index: 800;
-      align-items: center; justify-content: center;
+      display: none; position: fixed; inset: 0;
+      z-index: 800; align-items: center; justify-content: center;
     }
     #detail-modal.active { display: flex; }
 
     .detail-backdrop {
       position: absolute; inset: 0;
-      background: rgba(40,28,28,.55);
-      backdrop-filter: blur(10px);
+      background: rgba(40,28,28,.55); backdrop-filter: blur(10px);
     }
-
     .detail-card {
-      position: relative;
-      background: var(--surface);
-      border-radius: 24px;
-      width: min(420px, 94vw);
-      max-height: 92vh;
-      overflow: hidden;
+      position: relative; background: var(--surface); border-radius: 24px;
+      width: min(420px,94vw); max-height: 92vh; overflow: hidden;
       display: flex; flex-direction: column;
       box-shadow: 0 28px 64px rgba(0,0,0,.28);
-      animation: popIn .28s cubic-bezier(.34,1.36,.64,1);
-      z-index: 1;
+      animation: popIn .28s cubic-bezier(.34,1.36,.64,1); z-index: 1;
     }
-
     @keyframes popIn {
       from { transform: scale(.86) translateY(20px); opacity: 0; }
       to   { transform: scale(1)   translateY(0);    opacity: 1; }
     }
-
     .detail-img-wrap {
-      width: 100%;
-      aspect-ratio: 1;
-      overflow: hidden;
-      background: var(--pink-light);
-      flex-shrink: 0;
+      width: 100%; aspect-ratio: 1; overflow: hidden;
+      background: var(--pink-light); flex-shrink: 0;
     }
-    .detail-img-wrap img {
-      width: 100%; height: 100%;
-      object-fit: cover; display: block;
-    }
-    .detail-img-wrap .no-img {
-      width: 100%; height: 100%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 72px; color: var(--pink);
-    }
-
+    .detail-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .detail-close {
-      position: absolute;
-      top: 12px; right: 12px;
+      position: absolute; top: 12px; right: 12px;
       width: 34px; height: 34px;
-      background: rgba(255,255,255,.88);
-      backdrop-filter: blur(6px);
-      border: none; border-radius: 50%;
-      font-size: 14px; cursor: pointer;
+      background: rgba(255,255,255,.88); backdrop-filter: blur(6px);
+      border: none; border-radius: 50%; font-size: 14px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       color: var(--text); font-weight: 700;
-      box-shadow: 0 2px 10px rgba(0,0,0,.14);
-      transition: background .2s;
-      z-index: 3;
+      box-shadow: 0 2px 10px rgba(0,0,0,.14); z-index: 3; transition: background .2s;
     }
     .detail-close:hover { background: white; }
-
     .detail-info {
       padding: 18px 20px 22px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
     }
-
     .detail-prices { line-height: 1.4; }
-    .detail-cny {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text);
-    }
-    .detail-idr {
-      font-size: 13px;
-      color: var(--text-light);
-      font-weight: 500;
-    }
-
+    .detail-cny { font-size: 24px; font-weight: 700; color: var(--text); }
+    .detail-idr { font-size: 13px; color: var(--text-light); font-weight: 500; }
     .detail-heart-btn {
-      flex-shrink: 0;
-      display: flex; align-items: center; gap: 7px;
-      padding: 11px 20px;
-      background: var(--pink-light);
-      border: 1.5px solid var(--pink);
-      border-radius: 40px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 14px; font-weight: 700;
-      color: var(--pink-dark);
-      cursor: pointer;
-      transition: all .2s;
+      flex-shrink: 0; display: flex; align-items: center; gap: 7px;
+      padding: 11px 20px; background: var(--pink-light);
+      border: 1.5px solid var(--pink); border-radius: 40px;
+      font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700;
+      color: var(--pink-dark); cursor: pointer; transition: all .2s;
     }
     .detail-heart-btn:hover { background: var(--pink); color: white; border-color: var(--pink); }
-    .detail-heart-btn.loved {
-      background: #FFE0E4;
-      border-color: #E88898;
-      color: #C9606E;
-    }
-    .detail-heart-btn.loved:hover {
-      background: #FFCDD4;
-    }
+    .detail-heart-btn.loved { background: #FFE0E4; border-color: #E88898; color: #C9606E; }
     .detail-heart-btn .btn-icon { font-size: 18px; line-height: 1; }
 
     /* ═══════════════════════════════
@@ -331,88 +235,55 @@
     ═══════════════════════════════ */
     #login-modal {
       display: none; position: fixed; inset: 0;
-      background: rgba(50,38,38,.42);
-      backdrop-filter: blur(8px);
-      z-index: 1000;
-      align-items: center; justify-content: center;
+      background: rgba(50,38,38,.42); backdrop-filter: blur(8px);
+      z-index: 1000; align-items: center; justify-content: center;
     }
     #login-modal.active { display: flex; }
-
     .login-card {
-      background: white;
-      border-radius: 24px;
-      padding: 42px 36px;
-      width: 100%; max-width: 360px;
-      margin: 20px;
+      background: white; border-radius: 24px; padding: 42px 36px;
+      width: 100%; max-width: 360px; margin: 20px;
       box-shadow: 0 24px 60px rgba(180,100,100,.22);
       animation: popIn .28s cubic-bezier(.34,1.36,.64,1);
     }
     .login-card .lock-icon { text-align: center; font-size: 36px; margin-bottom: 16px; }
     .login-card h2 {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 28px; font-weight: 400;
-      text-align: center; margin-bottom: 6px;
+      font-size: 28px; font-weight: 400; text-align: center; margin-bottom: 6px;
     }
     .login-desc { text-align: center; color: var(--text-light); font-size: 13px; margin-bottom: 28px; }
-
     .form-group { margin-bottom: 14px; }
     .form-group label {
-      display: block;
-      font-size: 11px; font-weight: 700;
-      color: var(--text-light);
-      margin-bottom: 6px;
-      letter-spacing: .1em; text-transform: uppercase;
+      display: block; font-size: 11px; font-weight: 700; color: var(--text-light);
+      margin-bottom: 6px; letter-spacing: .1em; text-transform: uppercase;
     }
     .form-group input {
-      width: 100%;
-      padding: 12px 16px;
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 15px; color: var(--text);
-      background: var(--bg); outline: none;
+      width: 100%; padding: 12px 16px; border: 1.5px solid var(--border);
+      border-radius: 12px; font-family: 'Nunito', sans-serif;
+      font-size: 15px; color: var(--text); background: var(--bg); outline: none;
       transition: border-color .2s, box-shadow .2s;
     }
-    .form-group input:focus {
-      border-color: var(--pink);
-      box-shadow: 0 0 0 3px rgba(232,180,184,.22);
-    }
-
+    .form-group input:focus { border-color: var(--pink); box-shadow: 0 0 0 3px rgba(232,180,184,.22); }
     .btn-primary {
       width: 100%; padding: 14px;
       background: linear-gradient(135deg, var(--pink) 0%, var(--pink-dark) 100%);
-      color: white; border: none;
-      border-radius: 12px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 15px; font-weight: 700;
-      cursor: pointer;
-      transition: all .2s;
-      box-shadow: 0 4px 16px rgba(201,132,141,.40);
-      margin-top: 6px;
+      color: white; border: none; border-radius: 12px;
+      font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: all .2s;
+      box-shadow: 0 4px 16px rgba(201,132,141,.40); margin-top: 6px;
     }
     .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(201,132,141,.50); }
-
     .btn-ghost {
-      width: 100%; padding: 11px;
-      background: transparent; color: var(--text-light);
-      border: none; border-radius: 12px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 14px; font-weight: 600;
-      cursor: pointer; transition: all .2s; margin-top: 6px;
+      width: 100%; padding: 11px; background: transparent; color: var(--text-light);
+      border: none; border-radius: 12px; font-family: 'Nunito', sans-serif;
+      font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; margin-top: 6px;
     }
     .btn-ghost:hover { background: var(--bg); color: var(--text); }
-
     .login-error {
-      color: var(--red); font-size: 13px;
-      text-align: center; margin-top: 12px;
-      display: none;
+      color: var(--red); font-size: 13px; text-align: center; margin-top: 12px; display: none;
     }
     .login-error.show { display: block; animation: shake .35s ease; }
-
     @keyframes shake {
-      0%,100% { transform: translateX(0); }
-      25%      { transform: translateX(-6px); }
-      75%      { transform: translateX(6px); }
+      0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); }
     }
 
     /* ═══════════════════════════════
@@ -422,170 +293,93 @@
     #admin-view.active { display: block; }
 
     .admin-header {
-      background: white;
-      border-bottom: 1px solid var(--border);
-      padding: 14px 24px;
+      background: white; border-bottom: 1px solid var(--border); padding: 14px 24px;
       display: flex; align-items: center; justify-content: space-between;
       position: sticky; top: 0; z-index: 200;
-      box-shadow: 0 2px 16px rgba(180,120,120,.09);
-      gap: 12px;
+      box-shadow: 0 2px 16px rgba(180,120,120,.09); gap: 12px;
     }
-    .admin-header h1 {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 22px; font-weight: 400;
-    }
+    .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; }
     .admin-header h1 em { color: var(--pink-dark); font-style: italic; }
-
     .admin-header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
     .btn-wishlist {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 16px;
-      background: #FFF0F3;
-      border: 1.5px solid #F5C0C8;
-      border-radius: 10px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 13px; font-weight: 700;
-      color: var(--pink-dark);
-      cursor: pointer; transition: all .2s;
+      display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+      background: #FFF0F3; border: 1.5px solid #F5C0C8; border-radius: 10px;
+      font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 700;
+      color: var(--pink-dark); cursor: pointer; transition: all .2s;
     }
     .btn-wishlist:hover { background: #FFE0E7; }
     .btn-wishlist .w-badge {
-      background: var(--pink-dark);
-      color: white;
-      font-size: 10px; font-weight: 800;
-      min-width: 18px; height: 18px;
-      border-radius: 9px;
-      display: inline-flex; align-items: center; justify-content: center;
-      padding: 0 5px;
+      background: var(--pink-dark); color: white; font-size: 10px; font-weight: 800;
+      min-width: 18px; height: 18px; border-radius: 9px;
+      display: inline-flex; align-items: center; justify-content: center; padding: 0 5px;
     }
     .btn-wishlist .w-badge.zero { background: var(--border); color: var(--text-light); }
 
     .btn-logout {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 8px 14px;
-      background: var(--pink-light);
-      color: var(--pink-dark);
-      border: 1.5px solid var(--pink);
-      border-radius: 10px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 13px; font-weight: 700;
-      cursor: pointer; transition: all .2s;
+      display: inline-flex; align-items: center; gap: 5px; padding: 8px 14px;
+      background: var(--pink-light); color: var(--pink-dark); border: 1.5px solid var(--pink);
+      border-radius: 10px; font-family: 'Nunito', sans-serif;
+      font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s;
     }
     .btn-logout:hover { background: var(--pink); color: white; border-color: var(--pink); }
 
-    .admin-content {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 28px 20px 80px;
-    }
+    .admin-content { max-width: 860px; margin: 0 auto; padding: 28px 20px 80px; }
 
-    /* Rate card */
     .rate-card {
-      background: white;
-      border-radius: var(--radius);
-      padding: 18px 22px;
-      margin-bottom: 24px;
-      box-shadow: var(--shadow);
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      flex-wrap: wrap;
+      background: white; border-radius: var(--radius); padding: 16px 20px;
+      margin-bottom: 22px; box-shadow: var(--shadow);
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
     }
     .rate-card label {
-      font-size: 12px; font-weight: 700;
-      color: var(--text-light);
-      letter-spacing: .08em; text-transform: uppercase;
-      flex-shrink: 0;
+      font-size: 11px; font-weight: 700; color: var(--text-light);
+      letter-spacing: .08em; text-transform: uppercase; flex-shrink: 0;
     }
-    .rate-input-row {
-      display: flex; align-items: center; gap: 8px;
-      flex: 1;
-    }
-    .rate-input-row span {
-      font-size: 14px; font-weight: 600; color: var(--text-light);
-      white-space: nowrap;
-    }
+    .rate-input-row { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
+    .rate-input-row span { font-size: 14px; font-weight: 600; color: var(--text-light); white-space: nowrap; }
     .rate-input-row input {
-      width: 110px;
-      padding: 8px 12px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 14px; color: var(--text);
-      background: var(--bg); outline: none;
-      transition: border-color .2s;
+      width: 110px; padding: 8px 12px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-family: 'Nunito', sans-serif;
+      font-size: 14px; color: var(--text); background: var(--bg); outline: none; transition: border-color .2s;
     }
     .rate-input-row input:focus { border-color: var(--pink); }
     .btn-rate-save {
-      padding: 8px 16px;
-      background: var(--pink-light);
-      border: 1.5px solid var(--pink);
-      border-radius: 10px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 13px; font-weight: 700;
-      color: var(--pink-dark);
-      cursor: pointer; transition: all .2s;
+      padding: 8px 16px; background: var(--pink-light); border: 1.5px solid var(--pink);
+      border-radius: 10px; font-family: 'Nunito', sans-serif;
+      font-size: 13px; font-weight: 700; color: var(--pink-dark); cursor: pointer; transition: all .2s;
     }
     .btn-rate-save:hover { background: var(--pink); color: white; }
-    .rate-saved-msg {
-      font-size: 12px; color: var(--green);
-      font-weight: 600; display: none;
-    }
+    .rate-saved-msg { font-size: 12px; color: var(--green); font-weight: 600; display: none; }
     .rate-saved-msg.show { display: inline; }
 
-    /* Add product */
     .add-product-card {
-      background: white;
-      border-radius: var(--radius);
-      padding: 24px 24px 20px;
-      margin-bottom: 28px;
-      box-shadow: var(--shadow);
+      background: white; border-radius: var(--radius); padding: 24px 24px 20px;
+      margin-bottom: 28px; box-shadow: var(--shadow);
     }
-
     .section-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 21px; font-weight: 400;
-      color: var(--text);
-      margin-bottom: 20px;
+      font-family: 'Cormorant Garamond', serif; font-size: 21px; font-weight: 400;
+      color: var(--text); margin-bottom: 20px;
       display: flex; align-items: center; gap: 12px;
     }
-    .section-title::after {
-      content: ''; flex: 1; height: 1px; background: var(--border);
-    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-    .add-form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
+    .add-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     @media (max-width: 520px) { .add-form-grid { grid-template-columns: 1fr; } }
 
     .img-upload-area {
-      grid-column: 1/-1;
-      border: 2px dashed var(--border);
-      border-radius: 14px;
-      padding: 22px 16px;
-      text-align: center;
-      cursor: pointer;
-      transition: all .22s;
-      background: var(--bg);
-      position: relative;
-      min-height: 108px;
-      display: flex; align-items: center; justify-content: center;
+      grid-column: 1/-1; border: 2px dashed var(--border); border-radius: 14px;
+      padding: 22px 16px; text-align: center; cursor: pointer; transition: all .22s;
+      background: var(--bg); position: relative;
+      min-height: 108px; display: flex; align-items: center; justify-content: center;
     }
-    .img-upload-area:hover, .img-upload-area.dragover {
-      border-color: var(--pink-mid); background: var(--pink-light);
-    }
+    .img-upload-area:hover, .img-upload-area.dragover { border-color: var(--pink-mid); background: var(--pink-light); }
     .img-upload-area input[type="file"] {
       position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
     }
     .upload-inner { pointer-events: none; }
     .upload-preview {
-      width: 86px; height: 86px;
-      object-fit: cover; border-radius: 10px;
-      display: none; margin-bottom: 6px;
-      box-shadow: 0 2px 10px rgba(0,0,0,.10);
+      width: 86px; height: 86px; object-fit: cover; border-radius: 10px;
+      display: none; margin-bottom: 6px; box-shadow: 0 2px 10px rgba(0,0,0,.10);
     }
     .upload-preview.show { display: inline-block; }
     .upload-icon { font-size: 32px; color: var(--pink); margin-bottom: 6px; }
@@ -593,177 +387,113 @@
     .upload-text strong { color: var(--pink-dark); }
 
     .add-form-grid .form-group label {
-      display: block;
-      font-size: 11px; font-weight: 700;
-      color: var(--text-light);
-      margin-bottom: 6px;
-      letter-spacing: .1em; text-transform: uppercase;
+      display: block; font-size: 11px; font-weight: 700; color: var(--text-light);
+      margin-bottom: 6px; letter-spacing: .1em; text-transform: uppercase;
     }
     .add-form-grid .form-group input {
-      width: 100%; padding: 11px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 14px; color: var(--text);
-      background: var(--bg); outline: none;
+      width: 100%; padding: 11px 14px; border: 1.5px solid var(--border);
+      border-radius: 12px; font-family: 'Nunito', sans-serif;
+      font-size: 14px; color: var(--text); background: var(--bg); outline: none;
       transition: border-color .2s, box-shadow .2s;
     }
-    .add-form-grid .form-group input:focus {
-      border-color: var(--pink);
-      box-shadow: 0 0 0 3px rgba(232,180,184,.22);
-    }
+    .add-form-grid .form-group input:focus { border-color: var(--pink); box-shadow: 0 0 0 3px rgba(232,180,184,.22); }
     .add-form-grid .form-group input.error { border-color: var(--red) !important; }
-    .add-form-footer { margin-top: 16px; display: flex; justify-content: flex-end; }
+
+    .add-form-footer { margin-top: 16px; display: flex; justify-content: flex-end; gap: 10px; align-items: center; }
+    .add-status { font-size: 13px; color: var(--text-light); }
     .btn-add {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 11px 26px;
+      display: inline-flex; align-items: center; gap: 6px; padding: 11px 26px;
       background: linear-gradient(135deg, var(--pink) 0%, var(--pink-dark) 100%);
-      color: white; border: none;
-      border-radius: 12px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 14px; font-weight: 700;
-      cursor: pointer; transition: all .2s;
-      box-shadow: 0 4px 15px rgba(201,132,141,.38);
+      color: white; border: none; border-radius: 12px;
+      font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: all .2s; box-shadow: 0 4px 15px rgba(201,132,141,.38);
     }
-    .btn-add:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(201,132,141,.48); }
+    .btn-add:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(201,132,141,.48); }
+    .btn-add:disabled { opacity: .6; cursor: not-allowed; }
 
-    /* Admin product list */
     .products-list { display: flex; flex-direction: column; gap: 10px; }
-
     .admin-product-item {
-      background: white;
-      border-radius: 14px;
-      padding: 12px 14px;
-      display: flex; align-items: center; gap: 14px;
-      box-shadow: var(--shadow);
-      border: 1.5px solid transparent;
-      transition: border-color .2s, background .2s;
+      background: white; border-radius: 14px; padding: 12px 14px;
+      display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow);
+      border: 1.5px solid transparent; transition: border-color .2s, background .2s;
     }
     .admin-product-item.ordered { border-color: var(--green); background: var(--green-bg); }
-
-    .admin-thumb {
-      width: 64px; height: 64px;
-      border-radius: 10px; object-fit: cover; flex-shrink: 0;
-    }
+    .admin-thumb { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
     .admin-thumb-placeholder {
-      width: 64px; height: 64px;
-      border-radius: 10px;
-      background: var(--pink-light);
+      width: 64px; height: 64px; border-radius: 10px; background: var(--pink-light);
       display: flex; align-items: center; justify-content: center;
       font-size: 22px; color: var(--pink); flex-shrink: 0;
     }
-
     .admin-product-info { flex: 1; min-width: 0; }
-    .admin-product-price {
-      font-weight: 700; font-size: 15px; color: var(--text);
-    }
+    .admin-product-price { font-weight: 700; font-size: 15px; color: var(--text); }
     .admin-product-idr { font-size: 12px; color: var(--text-light); margin-top: 2px; }
     .admin-loved-tag {
       display: inline-flex; align-items: center; gap: 4px;
-      background: #FFE8EC;
-      color: #C9606E;
-      font-size: 11px; font-weight: 700;
-      padding: 2px 8px; border-radius: 10px;
-      margin-top: 4px;
+      background: #FFE8EC; color: #C9606E;
+      font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-top: 4px;
     }
-
     .admin-product-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-
     .ordered-check {
-      display: flex; align-items: center; gap: 6px;
-      cursor: pointer;
+      display: flex; align-items: center; gap: 6px; cursor: pointer;
       font-size: 12.5px; color: var(--text-light); font-weight: 600;
       white-space: nowrap; user-select: none;
     }
-    .ordered-check input[type="checkbox"] {
-      width: 17px; height: 17px;
-      accent-color: var(--green); cursor: pointer;
-    }
-
+    .ordered-check input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--green); cursor: pointer; }
     .btn-delete {
-      background: var(--red-bg); color: var(--red);
-      border: 1px solid var(--red-border);
+      background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border);
       border-radius: 8px; width: 34px; height: 34px;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; font-size: 15px; transition: all .18s;
     }
     .btn-delete:hover { background: var(--red); color: white; border-color: var(--red); }
-
     .empty-admin {
-      text-align: center; padding: 50px 20px;
-      color: var(--text-light);
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 18px; font-style: italic;
+      text-align: center; padding: 50px 20px; color: var(--text-light);
+      font-family: 'Cormorant Garamond', serif; font-size: 18px; font-style: italic;
     }
-
     .product-count {
       display: inline-flex; align-items: center;
       background: var(--pink-light); color: var(--pink-dark);
-      font-size: 12px; font-weight: 700;
-      padding: 2px 10px; border-radius: 20px;
-      margin-left: 10px;
+      font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 20px; margin-left: 10px;
     }
-
     @media (max-width: 480px) {
       .admin-product-item { flex-wrap: wrap; }
-      .admin-product-actions {
-        width: 100%; justify-content: flex-end;
-        border-top: 1px solid var(--border); padding-top: 10px; margin-top: 2px;
-      }
+      .admin-product-actions { width: 100%; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 10px; margin-top: 2px; }
     }
 
     /* ═══════════════════════════════
        WISHLIST SIDE PANEL
     ═══════════════════════════════ */
     .wishlist-backdrop {
-      position: fixed; inset: 0;
-      background: rgba(50,38,38,.30);
-      backdrop-filter: blur(3px);
-      z-index: 298;
-      opacity: 0; pointer-events: none;
-      transition: opacity .3s;
+      position: fixed; inset: 0; background: rgba(50,38,38,.30);
+      backdrop-filter: blur(3px); z-index: 298;
+      opacity: 0; pointer-events: none; transition: opacity .3s;
     }
     .wishlist-backdrop.show { opacity: 1; pointer-events: all; }
 
     .wishlist-panel {
-      position: fixed;
-      top: 0; right: 0;
-      width: 310px; max-width: 90vw;
-      height: 100vh;
-      background: white;
-      z-index: 299;
-      transform: translateX(100%);
-      transition: transform .32s cubic-bezier(.4,0,.2,1);
+      position: fixed; top: 0; right: 0; width: 310px; max-width: 90vw; height: 100vh;
+      background: white; z-index: 299;
+      transform: translateX(100%); transition: transform .32s cubic-bezier(.4,0,.2,1);
       display: flex; flex-direction: column;
-      box-shadow: -6px 0 36px rgba(180,100,100,.16);
-      border-left: 1px solid var(--border);
+      box-shadow: -6px 0 36px rgba(180,100,100,.16); border-left: 1px solid var(--border);
     }
     .wishlist-panel.open { transform: translateX(0); }
 
     .wishlist-panel-header {
-      padding: 20px 18px 16px;
-      border-bottom: 1px solid var(--border);
+      padding: 20px 18px 16px; border-bottom: 1px solid var(--border);
       background: linear-gradient(135deg, #FFF4F5 0%, white 100%);
-      flex-shrink: 0;
-      display: flex; align-items: flex-start; justify-content: space-between;
+      flex-shrink: 0; display: flex; align-items: flex-start; justify-content: space-between;
     }
-    .wishlist-panel-header-text {}
     .wishlist-panel-header h3 {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 22px; font-weight: 400; color: var(--text);
-      margin-bottom: 3px;
+      font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; margin-bottom: 3px;
     }
-    .wishlist-panel-header p {
-      font-size: 12px; color: var(--text-light); font-weight: 500;
-    }
+    .wishlist-panel-header p { font-size: 12px; color: var(--text-light); font-weight: 500; }
     .btn-panel-close {
-      background: var(--bg); border: 1px solid var(--border);
-      border-radius: 8px; width: 30px; height: 30px;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; font-size: 13px; color: var(--text-light);
-      transition: all .2s; flex-shrink: 0;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 13px; color: var(--text-light); transition: all .2s; flex-shrink: 0;
     }
-    .btn-panel-close:hover { background: var(--pink-light); color: var(--text); }
+    .btn-panel-close:hover { background: var(--pink-light); }
 
     .wishlist-list {
       flex: 1; overflow-y: auto; padding: 14px;
@@ -774,18 +504,15 @@
 
     .wishlist-item {
       display: flex; align-items: center; gap: 12px;
-      background: var(--bg);
-      border-radius: 12px; padding: 10px;
-      border: 1px solid var(--border);
+      background: var(--bg); border-radius: 12px; padding: 10px;
+      border: 1px solid var(--border); transition: opacity .25s;
     }
-    .wishlist-thumb {
-      width: 54px; height: 54px;
-      border-radius: 8px; object-fit: cover; flex-shrink: 0;
-    }
+    .wishlist-item.bought { opacity: .55; }
+    .wishlist-item.bought .wishlist-item-price { text-decoration: line-through; color: var(--text-light); }
+
+    .wishlist-thumb { width: 54px; height: 54px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
     .wishlist-thumb-placeholder {
-      width: 54px; height: 54px;
-      border-radius: 8px;
-      background: var(--pink-light);
+      width: 54px; height: 54px; border-radius: 8px; background: var(--pink-light);
       display: flex; align-items: center; justify-content: center;
       font-size: 20px; color: var(--pink); flex-shrink: 0;
     }
@@ -794,163 +521,68 @@
     .wishlist-item-idr { font-size: 11.5px; color: var(--text-light); margin-top: 1px; }
 
     .btn-bought {
-      flex-shrink: 0;
-      padding: 7px 11px;
-      border-radius: 10px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 11.5px; font-weight: 700;
+      flex-shrink: 0; padding: 7px 10px; border-radius: 10px;
+      font-family: 'Nunito', sans-serif; font-size: 11.5px; font-weight: 700;
       cursor: pointer; transition: all .2s;
-      display: flex; align-items: center; gap: 5px;
-      white-space: nowrap;
+      display: flex; align-items: center; gap: 4px; white-space: nowrap;
     }
-    .btn-bought.pending {
-      background: white;
-      border: 1.5px solid var(--border);
-      color: var(--text-light);
-    }
-    .btn-bought.pending:hover {
-      border-color: var(--green); color: #5a9e5a;
-      background: var(--green-bg);
-    }
-    .btn-bought.done {
-      background: var(--green-bg);
-      border: 1.5px solid var(--green);
-      color: #4a8e4a;
-    }
-    .btn-bought.done:hover {
-      background: #ddf0dd;
-    }
+    .btn-bought.pending { background: white; border: 1.5px solid var(--border); color: var(--text-light); }
+    .btn-bought.pending:hover { border-color: var(--green); color: #4a8e4a; background: var(--green-bg); }
+    .btn-bought.done { background: var(--green-bg); border: 1.5px solid var(--green); color: #4a8e4a; }
+    .btn-bought.done:hover { background: #ddf0dd; }
 
-    .wishlist-item.bought {
-      opacity: .62;
-    }
-    .wishlist-item.bought .wishlist-item-price {
-      text-decoration: line-through;
-      color: var(--text-light);
-    }
-
-    .wishlist-empty {
-      text-align: center; padding: 48px 16px;
-      color: var(--text-light);
-    }
+    .wishlist-empty { text-align: center; padding: 48px 16px; color: var(--text-light); }
     .wishlist-empty .wi-icon { font-size: 40px; margin-bottom: 12px; opacity: .4; }
-    .wishlist-empty p {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 16px; font-style: italic;
-    }
+    .wishlist-empty p { font-family: 'Cormorant Garamond', serif; font-size: 16px; font-style: italic; }
 
     .wishlist-footer {
-      padding: 14px 16px;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      flex-shrink: 0;
-      background: var(--pink-light);
+      padding: 14px 16px; border-top: 1px solid var(--border);
+      text-align: center; flex-shrink: 0; background: var(--pink-light);
     }
-    .wishlist-footer p {
-      font-size: 13px; color: var(--pink-dark);
-      font-weight: 600;
-    }
+    .wishlist-footer p { font-size: 13px; color: var(--pink-dark); font-weight: 600; }
 
     /* ═══════════════════════════════
-       UPSET DUCK MASCOT
+       DUCK MASCOT
     ═══════════════════════════════ */
-    .duck-container {
-      position: fixed; bottom: 14px; left: 14px;
-      z-index: 48; user-select: none;
-    }
+    .duck-container { position: fixed; bottom: 14px; left: 14px; z-index: 48; user-select: none; }
     .duck-wrap {
-      position: relative; width: 82px; height: 88px;
-      cursor: pointer;
+      position: relative; width: 82px; height: 88px; cursor: pointer;
       animation: duck-bob 2.8s ease-in-out infinite;
-      filter: drop-shadow(0 5px 10px rgba(0,0,0,.13));
-      transition: filter .2s;
+      filter: drop-shadow(0 5px 10px rgba(0,0,0,.13)); transition: filter .2s;
     }
     .duck-wrap:hover  { filter: drop-shadow(0 8px 16px rgba(0,0,0,.18)); }
     .duck-wrap:active { transform: scale(.92); }
     .duck-wrap.shaking { animation: duck-shake .34s ease-in-out 3 !important; }
-
     @keyframes duck-bob {
       0%,100% { transform: translateY(0) rotate(0deg); }
-      35%      { transform: translateY(-9px) rotate(-2deg); }
-      65%      { transform: translateY(-5px) rotate(1deg); }
+      35% { transform: translateY(-9px) rotate(-2deg); }
+      65% { transform: translateY(-5px) rotate(1deg); }
     }
     @keyframes duck-shake {
       0%,100% { transform: rotate(-10deg) translateY(-4px); }
-      50%      { transform: rotate(10deg)  translateY(-4px); }
+      50% { transform: rotate(10deg) translateY(-4px); }
     }
-
-    .d-body {
-      position: absolute; bottom: 14px; left: 2px;
-      width: 64px; height: 46px; background: #FFD93D;
-      border-radius: 46% 54% 54% 46% / 45% 45% 55% 55%;
-    }
-    .d-body::before {
-      content: ''; position: absolute;
-      width: 18px; height: 24px; background: #FFD93D;
-      border-radius: 50% 20% 20% 50% / 60% 40% 60% 40%;
-      left: -10px; top: -7px; transform: rotate(-18deg);
-    }
-    .d-body::after {
-      content: ''; position: absolute;
-      width: 30px; height: 18px; background: #EFC200;
-      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-      right: 8px; top: 13px; transform: rotate(4deg);
-    }
-    .d-head {
-      position: absolute; top: 2px; right: 4px;
-      width: 38px; height: 36px; background: #FFD93D;
-      border-radius: 50%; z-index: 2;
-    }
-    .d-eye {
-      position: absolute; width: 9px; height: 9px;
-      background: #1E1830; border-radius: 50%;
-      top: 12px; right: 5px;
-    }
-    .d-eye::after {
-      content: ''; position: absolute;
-      width: 3px; height: 3px;
-      background: rgba(255,255,255,.88); border-radius: 50%;
-      top: 1px; left: 1px;
-    }
-    .d-brow-l, .d-brow-r {
-      position: absolute; height: 2.5px; width: 9px;
-      background: #C89800; border-radius: 3px; top: 5px;
-    }
+    .d-body { position: absolute; bottom: 14px; left: 2px; width: 64px; height: 46px; background: #FFD93D; border-radius: 46% 54% 54% 46% / 45% 45% 55% 55%; }
+    .d-body::before { content: ''; position: absolute; width: 18px; height: 24px; background: #FFD93D; border-radius: 50% 20% 20% 50% / 60% 40% 60% 40%; left: -10px; top: -7px; transform: rotate(-18deg); }
+    .d-body::after { content: ''; position: absolute; width: 30px; height: 18px; background: #EFC200; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; right: 8px; top: 13px; transform: rotate(4deg); }
+    .d-head { position: absolute; top: 2px; right: 4px; width: 38px; height: 36px; background: #FFD93D; border-radius: 50%; z-index: 2; }
+    .d-eye { position: absolute; width: 9px; height: 9px; background: #1E1830; border-radius: 50%; top: 12px; right: 5px; }
+    .d-eye::after { content: ''; position: absolute; width: 3px; height: 3px; background: rgba(255,255,255,.88); border-radius: 50%; top: 1px; left: 1px; }
+    .d-brow-l, .d-brow-r { position: absolute; height: 2.5px; width: 9px; background: #C89800; border-radius: 3px; top: 5px; }
     .d-brow-l { right: 13px; transform-origin: right center; transform: rotate(22deg); }
     .d-brow-r { right: 4px;  transform-origin: left center;  transform: rotate(-22deg); }
-    .d-beak {
-      position: absolute; right: -17px; top: 16px;
-      width: 20px; height: 13px;
-      background: #FF8C42; border-radius: 2px 8px 8px 2px;
-    }
-    .d-beak::before {
-      content: ''; position: absolute;
-      width: 90%; height: 2px; background: #D06820;
-      top: 48%; left: 5%; border-radius: 0 0 8px 8px;
-      transform: scaleY(1.5);
-    }
-    .d-beak::after {
-      content: ''; position: absolute;
-      width: 4px; height: 3px; background: #D06820;
-      border-radius: 50%; top: 3px; right: 5px;
-    }
-    .d-blush {
-      position: absolute; width: 12px; height: 7px;
-      background: rgba(255,160,140,.45);
-      border-radius: 50%; bottom: 8px; right: 4px;
-    }
+    .d-beak { position: absolute; right: -17px; top: 16px; width: 20px; height: 13px; background: #FF8C42; border-radius: 2px 8px 8px 2px; }
+    .d-beak::before { content: ''; position: absolute; width: 90%; height: 2px; background: #D06820; top: 48%; left: 5%; border-radius: 0 0 8px 8px; transform: scaleY(1.5); }
+    .d-beak::after { content: ''; position: absolute; width: 4px; height: 3px; background: #D06820; border-radius: 50%; top: 3px; right: 5px; }
+    .d-blush { position: absolute; width: 12px; height: 7px; background: rgba(255,160,140,.45); border-radius: 50%; bottom: 8px; right: 4px; }
     .d-feet { position: absolute; bottom: 0; left: 18px; display: flex; gap: 10px; }
     .d-foot { width: 18px; height: 8px; background: #FF8C42; border-radius: 50% 50% 55% 55% / 30% 30% 70% 70%; }
-
     .duck-speech {
       position: absolute; bottom: calc(100% + 6px); left: 0;
       background: white; border: 1.5px solid var(--border);
-      border-radius: 14px 14px 14px 3px;
-      padding: 7px 14px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 12.5px; font-weight: 700; color: var(--text);
-      white-space: nowrap;
-      box-shadow: 0 4px 16px rgba(0,0,0,.10);
+      border-radius: 14px 14px 14px 3px; padding: 7px 14px;
+      font-family: 'Nunito', sans-serif; font-size: 12.5px; font-weight: 700; color: var(--text);
+      white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,.10);
       pointer-events: none; opacity: 0;
       transform: translateY(10px) scale(.82);
       transition: all .3s cubic-bezier(.34,1.4,.64,1);
@@ -962,10 +594,16 @@
 </head>
 <body>
 
+<!-- Loading -->
+<div id="app-loading">
+  <span class="spin">🌸</span>
+  <p>Memuat katalog...</p>
+</div>
+
 <!-- ═══════════════════════════════════════
      PUBLIC VIEW
 ════════════════════════════════════════ -->
-<div id="public-view">
+<div id="public-view" class="hidden">
   <header class="public-header">
     <p class="subtitle">✦ Daftar Titipan ✦</p>
     <h1>Katalog <em>Belanja</em></h1>
@@ -974,31 +612,20 @@
       ¥1 = <span id="rate-display"></span> IDR
     </div>
   </header>
-
   <div class="catalog-grid" id="catalog-grid"></div>
-
   <button id="lock-btn" title="Admin" aria-label="Admin login">🔒</button>
-
-  <!-- Duck mascot -->
   <div class="duck-container">
     <div class="duck-speech" id="duck-speech">hmph! 🌸</div>
     <div class="duck-wrap" id="duck-wrap">
       <div class="d-head">
-        <div class="d-brow-l"></div>
-        <div class="d-brow-r"></div>
-        <div class="d-eye"></div>
-        <div class="d-beak"></div>
-        <div class="d-blush"></div>
+        <div class="d-brow-l"></div><div class="d-brow-r"></div>
+        <div class="d-eye"></div><div class="d-beak"></div><div class="d-blush"></div>
       </div>
       <div class="d-body"></div>
-      <div class="d-feet">
-        <div class="d-foot"></div>
-        <div class="d-foot"></div>
-      </div>
+      <div class="d-feet"><div class="d-foot"></div><div class="d-foot"></div></div>
     </div>
   </div>
 </div>
-
 
 <!-- ═══════════════════════════════════════
      DETAIL LIGHTBOX
@@ -1021,7 +648,6 @@
   </div>
 </div>
 
-
 <!-- ═══════════════════════════════════════
      LOGIN MODAL
 ════════════════════════════════════════ -->
@@ -1039,11 +665,10 @@
       <input type="password" id="login-pass" placeholder="••••" autocomplete="current-password">
     </div>
     <button class="btn-primary" id="login-btn">Masuk</button>
-    <button class="btn-ghost" id="login-cancel">Batal</button>
+    <button class="btn-ghost"   id="login-cancel">Batal</button>
     <div class="login-error" id="login-error">Username atau password salah.</div>
   </div>
 </div>
-
 
 <!-- ═══════════════════════════════════════
      ADMIN VIEW
@@ -1058,10 +683,8 @@
       <button class="btn-logout" id="logout-btn">← Keluar</button>
     </div>
   </header>
-
   <div class="admin-content">
 
-    <!-- Rate setting -->
     <div class="rate-card">
       <label>Kurs Yuan → Rupiah</label>
       <div class="rate-input-row">
@@ -1073,7 +696,6 @@
       </div>
     </div>
 
-    <!-- Add product -->
     <div class="add-product-card">
       <h2 class="section-title">Tambah Produk</h2>
       <div class="add-form-grid">
@@ -1083,96 +705,78 @@
             <img class="upload-preview" id="upload-preview" alt="Preview">
             <div id="upload-placeholder">
               <div class="upload-icon">🖼️</div>
-              <div class="upload-text">
-                <strong>Klik atau seret foto</strong> ke sini<br>
-                <small>JPG · PNG · WEBP</small>
-              </div>
+              <div class="upload-text"><strong>Klik atau seret foto</strong> ke sini<br><small>JPG · PNG · WEBP</small></div>
             </div>
           </div>
         </div>
-
         <div class="form-group">
           <label for="prod-price">Harga (Yuan ¥)</label>
           <input type="number" id="prod-price" placeholder="cth. 150" min="0" step="0.01">
         </div>
-
         <div class="form-group" id="idr-preview-wrap" style="display:none">
           <label>Estimasi IDR</label>
-          <input type="text" id="idr-preview" readonly placeholder="—" style="background:#f9f5f5;cursor:default;">
+          <input type="text" id="idr-preview" readonly style="background:#f9f5f5;cursor:default;">
         </div>
       </div>
       <div class="add-form-footer">
+        <span class="add-status" id="add-status"></span>
         <button class="btn-add" id="add-btn">＋ Simpan Produk</button>
       </div>
     </div>
 
-    <!-- Product list -->
     <h2 class="section-title">
-      Semua Produk
-      <span class="product-count" id="product-count">0</span>
+      Semua Produk <span class="product-count" id="product-count">0</span>
     </h2>
     <div class="products-list" id="admin-list"></div>
-
   </div>
 </div>
 
-
-<!-- ═══════════════════════════════════════
-     WISHLIST SIDE PANEL
-════════════════════════════════════════ -->
+<!-- Wishlist panel -->
 <div class="wishlist-backdrop" id="wishlist-backdrop"></div>
 <div class="wishlist-panel" id="wishlist-panel">
   <div class="wishlist-panel-header">
-    <div class="wishlist-panel-header-text">
+    <div>
       <h3>Wishlist Mama 💕</h3>
       <p>Tolong dibelikan ya 🥺</p>
     </div>
     <button class="btn-panel-close" id="wishlist-close-btn">✕</button>
   </div>
   <div class="wishlist-list" id="wishlist-list"></div>
-  <div class="wishlist-footer">
-    <p id="wishlist-footer-text">0 item dipinginkan mama</p>
-  </div>
+  <div class="wishlist-footer"><p id="wishlist-footer-text">0 item dipinginkan mama</p></div>
 </div>
 
 
 <script>
+  /* ╔══════════════════════════════════════════════════
+     ║  SUPABASE CONFIG
+     ╚══════════════════════════════════════════════════ */
+  const SUPABASE_URL      = 'https://masslxmxyhlfgvmhuyld.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hc3NseG14eWhsZmd2bWh1eWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNDk4NzIsImV4cCI6MjA5NTYyNTg3Mn0.1An7-vos1IH-9UujQLuJp7sYJqnwLLkPeOl-S_q4K4M';
+
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
   /* ─────────────────────────────────────
-     STATE & STORAGE
+     STATE
   ───────────────────────────────────── */
-  const PROD_KEY     = 'titipan_katalog_v2';
-  const SETTINGS_KEY = 'titipan_settings_v1';
+  let products  = [];
+  let settings  = {};        // { rate: "2200" }
+  let detailId  = null;
+  let pendingFile  = null;   // File object for Supabase Storage upload
+  let pendingImage = null;   // base64 for preview only
 
-  let products = (() => {
-    try { return JSON.parse(localStorage.getItem(PROD_KEY) || '[]'); }
-    catch { return []; }
-  })();
-
-  let settings = (() => {
-    try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); }
-    catch { return {}; }
-  })();
-
-  let pendingImage = null;  // base64 for new product
-  let detailId     = null;  // currently open detail product id
-
-  function saveProducts() { localStorage.setItem(PROD_KEY, JSON.stringify(products)); }
-  function saveSettings() { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
+  /* ─────────────────────────────────────
+     HELPERS
+  ───────────────────────────────────── */
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
-  /* ─────────────────────────────────────
-     FORMAT HELPERS
-  ───────────────────────────────────── */
-  function fmtYuan(price) {
-    return '¥ ' + parseFloat(price).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  function fmtYuan(p) {
+    return '¥ ' + parseFloat(p).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   }
-
   function fmtIDR(yuanPrice) {
     if (!settings.rate || !yuanPrice) return '';
-    const idr = Math.round(parseFloat(yuanPrice) * settings.rate);
-    return '≈ Rp ' + idr.toLocaleString('id-ID');
+    return '≈ Rp ' + Math.round(parseFloat(yuanPrice) * parseFloat(settings.rate)).toLocaleString('id-ID');
   }
-
   function esc(s) {
     const d = document.createElement('div');
     d.appendChild(document.createTextNode(s ?? ''));
@@ -1180,10 +784,108 @@
   }
 
   /* ─────────────────────────────────────
+     LOADING UI
+  ───────────────────────────────────── */
+  function hideLoader() {
+    const el = document.getElementById('app-loading');
+    el.classList.add('fade');
+    setTimeout(() => el.style.display = 'none', 400);
+    document.getElementById('public-view').classList.remove('hidden');
+  }
+
+  /* ─────────────────────────────────────
+     DATABASE LAYER
+  ───────────────────────────────────── */
+  async function dbLoad() {
+    const [prodRes, setRes] = await Promise.all([
+      sb.from('products').select('*').order('created_at', { ascending: true }),
+      sb.from('settings').select('*')
+    ]);
+    products = prodRes.data || [];
+    settings = {};
+    (setRes.data || []).forEach(r => { settings[r.key] = r.value; });
+  }
+
+  async function dbAddProduct(price, file) {
+    let image_url = null;
+
+    if (file) {
+      const ext  = file.name.split('.').pop().toLowerCase();
+      const path = `${uid()}.${ext}`;
+      const { error: upErr } = await sb.storage
+        .from('product-images').upload(path, file, { contentType: file.type });
+      if (!upErr) {
+        image_url = sb.storage.from('product-images').getPublicUrl(path).data.publicUrl;
+      }
+    }
+
+    const row = { id: uid(), price: String(price), image_url, ordered: false, loved: false };
+    const { data, error } = await sb.from('products').insert(row).select().single();
+    if (!error && data) products.push(data);
+    return !error;
+  }
+
+  async function dbUpdate(id, updates) {
+    const { error } = await sb.from('products').update(updates).eq('id', id);
+    if (!error) {
+      const p = products.find(x => x.id === id);
+      if (p) Object.assign(p, updates);
+    }
+    return !error;
+  }
+
+  async function dbDelete(id) {
+    const p = products.find(x => x.id === id);
+    const { error } = await sb.from('products').delete().eq('id', id);
+    if (!error) {
+      products = products.filter(x => x.id !== id);
+      if (p?.image_url?.includes('product-images')) {
+        const path = p.image_url.split('/product-images/').pop();
+        if (path) sb.storage.from('product-images').remove([path]);
+      }
+    }
+    return !error;
+  }
+
+  async function dbSaveSetting(key, value) {
+    const { error } = await sb.from('settings').upsert({ key, value: String(value) });
+    if (!error) settings[key] = String(value);
+    return !error;
+  }
+
+  /* ─────────────────────────────────────
+     REAL-TIME
+  ───────────────────────────────────── */
+  function initRealtime() {
+    sb.channel('catalog-rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, payload => {
+        if (payload.eventType === 'INSERT') {
+          if (!products.find(p => p.id === payload.new.id)) products.push(payload.new);
+        } else if (payload.eventType === 'UPDATE') {
+          const i = products.findIndex(p => p.id === payload.new.id);
+          if (i !== -1) products[i] = { ...products[i], ...payload.new };
+        } else if (payload.eventType === 'DELETE') {
+          products = products.filter(p => p.id !== payload.old.id);
+        }
+        refreshCurrentView();
+      })
+      .subscribe();
+  }
+
+  function refreshCurrentView() {
+    const adminActive = document.getElementById('admin-view').classList.contains('active');
+    if (adminActive) {
+      renderAdmin();
+      if (document.getElementById('wishlist-panel').classList.contains('open')) renderWishlist();
+    } else {
+      renderPublic();
+    }
+  }
+
+  /* ─────────────────────────────────────
      RENDER — PUBLIC
   ───────────────────────────────────── */
   function renderPublic() {
-    // Rate pill
     if (settings.rate) {
       document.getElementById('rate-display').textContent = Number(settings.rate).toLocaleString('id-ID');
       document.getElementById('rate-pill').style.display = 'inline-flex';
@@ -1192,55 +894,41 @@
     }
 
     const grid = document.getElementById('catalog-grid');
-
     if (!products.length) {
-      grid.innerHTML = `
-        <div class="empty-catalog">
-          <div class="empty-icon">🛍️</div>
-          <p>Katalog masih kosong</p>
-        </div>`;
+      grid.innerHTML = `<div class="empty-catalog"><div class="empty-icon">🛍️</div><p>Katalog masih kosong</p></div>`;
       return;
     }
-
-    const idr = (p) => settings.rate ? `<div class="card-price-idr">${fmtIDR(p.price)}</div>` : '';
 
     grid.innerHTML = products.map(p => `
       <div class="product-card" data-id="${p.id}">
         ${p.ordered ? '<div class="ordered-badge">✓ Sudah Diorder</div>' : ''}
         <div class="img-wrap">
-          ${p.image
-            ? `<img src="${p.image}" alt="produk" loading="lazy">`
+          ${p.image_url
+            ? `<img src="${esc(p.image_url)}" alt="produk" loading="lazy">`
             : `<div class="no-img">🛍️</div>`}
-          <button class="heart-btn ${p.loved ? 'loved' : ''}"
-            data-id="${p.id}" aria-label="Love produk">
+          <button class="heart-btn ${p.loved ? 'loved' : ''}" data-id="${p.id}">
             ${p.loved ? '❤️' : '🤍'}
           </button>
         </div>
         <div class="card-body">
           <div class="card-price-cny">${fmtYuan(p.price)}</div>
-          ${idr(p)}
+          ${settings.rate ? `<div class="card-price-idr">${fmtIDR(p.price)}</div>` : ''}
         </div>
       </div>`).join('');
 
-    // Attach events
-    grid.querySelectorAll('.product-card').forEach(card => {
-      // Click image area → detail
-      card.querySelector('.img-wrap').addEventListener('click', e => {
+    grid.querySelectorAll('.img-wrap').forEach(wrap => {
+      wrap.addEventListener('click', e => {
         if (e.target.closest('.heart-btn')) return;
-        openDetail(card.dataset.id);
+        openDetail(wrap.closest('.product-card').dataset.id);
       });
     });
-
     grid.querySelectorAll('.heart-btn').forEach(btn => {
-      btn.addEventListener('click', e => {
-        e.stopPropagation();
-        toggleLoved(btn.dataset.id, btn);
-      });
+      btn.addEventListener('click', e => { e.stopPropagation(); handleToggleLoved(btn.dataset.id, btn); });
     });
   }
 
   /* ─────────────────────────────────────
-     RENDER — ADMIN LIST
+     RENDER — ADMIN
   ───────────────────────────────────── */
   function renderAdmin() {
     document.getElementById('product-count').textContent = products.length;
@@ -1251,11 +939,10 @@
       list.innerHTML = `<div class="empty-admin">Belum ada produk. Tambahkan produk di atas 🌸</div>`;
       return;
     }
-
     list.innerHTML = products.map(p => `
       <div class="admin-product-item ${p.ordered ? 'ordered' : ''}">
-        ${p.image
-          ? `<img class="admin-thumb" src="${p.image}" alt="produk">`
+        ${p.image_url
+          ? `<img class="admin-thumb" src="${esc(p.image_url)}" alt="produk">`
           : `<div class="admin-thumb-placeholder">🛍️</div>`}
         <div class="admin-product-info">
           <div class="admin-product-price">${fmtYuan(p.price)}</div>
@@ -1265,111 +952,96 @@
         <div class="admin-product-actions">
           <label class="ordered-check">
             <input type="checkbox" ${p.ordered ? 'checked' : ''}
-              onchange="toggleOrdered('${p.id}', this.checked)"> Sudah dibeli
+              onchange="handleToggleOrdered('${p.id}', this.checked)"> Sudah dibeli
           </label>
-          <button class="btn-delete" onclick="deleteProduct('${p.id}')" title="Hapus">🗑️</button>
+          <button class="btn-delete" onclick="handleDelete('${p.id}')" title="Hapus">🗑️</button>
         </div>
       </div>`).join('');
   }
 
   /* ─────────────────────────────────────
-     RENDER — WISHLIST PANEL
+     RENDER — WISHLIST
   ───────────────────────────────────── */
   function renderWishlist() {
-    const loved = products.filter(p => p.loved);
-    const list  = document.getElementById('wishlist-list');
-    const footer= document.getElementById('wishlist-footer-text');
+    const loved  = products.filter(p => p.loved);
+    const bought = loved.filter(p => p.ordered).length;
+    const footer = document.getElementById('wishlist-footer-text');
+    footer.textContent = loved.length ? `${bought}/${loved.length} sudah dibeliin 💕` : '0 item dipinginkan mama';
 
-    const boughtCount = loved.filter(p => p.ordered).length;
-    footer.textContent = loved.length
-      ? `${boughtCount}/${loved.length} sudah dibeliin 💕`
-      : '0 item dipinginkan mama';
-
+    const list = document.getElementById('wishlist-list');
     if (!loved.length) {
-      list.innerHTML = `
-        <div class="wishlist-empty">
-          <div class="wi-icon">🤍</div>
-          <p>Belum ada yang di-wishlist</p>
-        </div>`;
+      list.innerHTML = `<div class="wishlist-empty"><div class="wi-icon">🤍</div><p>Belum ada yang di-wishlist</p></div>`;
       return;
     }
-
-    // Sort: belum dibeli dulu, sudah dibeli di bawah
     const sorted = [...loved].sort((a, b) => (a.ordered ? 1 : 0) - (b.ordered ? 1 : 0));
-
     list.innerHTML = sorted.map(p => `
       <div class="wishlist-item ${p.ordered ? 'bought' : ''}">
-        ${p.image
-          ? `<img class="wishlist-thumb" src="${p.image}" alt="produk">`
+        ${p.image_url
+          ? `<img class="wishlist-thumb" src="${esc(p.image_url)}" alt="produk">`
           : `<div class="wishlist-thumb-placeholder">🛍️</div>`}
         <div class="wishlist-item-info">
           <div class="wishlist-item-price">${fmtYuan(p.price)}</div>
           ${settings.rate ? `<div class="wishlist-item-idr">${fmtIDR(p.price)}</div>` : ''}
         </div>
         <button class="btn-bought ${p.ordered ? 'done' : 'pending'}"
-          onclick="toggleOrderedFromWishlist('${p.id}')">
+          onclick="handleToggleOrderedWishlist('${p.id}')">
           ${p.ordered ? '✓ Dibeli' : '○ Beli'}
         </button>
       </div>`).join('');
   }
 
   function updateWishlistBadge() {
-    const count = products.filter(p => p.loved).length;
+    const n     = products.filter(p => p.loved).length;
     const badge = document.getElementById('wishlist-count-badge');
-    badge.textContent = count;
-    badge.className = 'w-badge' + (count === 0 ? ' zero' : '');
+    badge.textContent = n;
+    badge.className   = 'w-badge' + (n === 0 ? ' zero' : '');
   }
 
   /* ─────────────────────────────────────
-     PRODUCT ACTIONS
+     ACTION HANDLERS (async-wrapped)
   ───────────────────────────────────── */
-  function toggleLoved(id, btnEl) {
+  async function handleToggleLoved(id, btnEl) {
     const p = products.find(x => x.id === id);
     if (!p) return;
-    p.loved = !p.loved;
-    saveProducts();
-    // Animate button
+    const next = !p.loved;
+    // Optimistic UI
+    p.loved = next;
     if (btnEl) {
-      btnEl.textContent = p.loved ? '❤️' : '🤍';
-      btnEl.className = 'heart-btn' + (p.loved ? ' loved popping' : ' popping');
+      btnEl.textContent = next ? '❤️' : '🤍';
+      btnEl.className = 'heart-btn' + (next ? ' loved popping' : ' popping');
       btnEl.addEventListener('animationend', () => btnEl.classList.remove('popping'), { once: true });
     }
-    // Sync detail modal if open
     if (detailId === id) updateDetailHeartBtn(p);
-    // Update admin if visible
     if (document.getElementById('admin-view').classList.contains('active')) {
       renderAdmin();
-      renderWishlist();
+      if (document.getElementById('wishlist-panel').classList.contains('open')) renderWishlist();
     }
+    await dbUpdate(id, { loved: next });
   }
 
-  function toggleOrdered(id, checked) {
+  async function handleToggleOrdered(id, checked) {
+    await dbUpdate(id, { ordered: checked });
+    renderAdmin();
+    renderPublic();
+    if (document.getElementById('wishlist-panel').classList.contains('open')) renderWishlist();
+  }
+
+  async function handleToggleOrderedWishlist(id) {
     const p = products.find(x => x.id === id);
     if (!p) return;
-    p.ordered = checked;
-    saveProducts();
+    await dbUpdate(id, { ordered: !p.ordered });
+    renderWishlist();
     renderAdmin();
     renderPublic();
   }
 
-  function toggleOrderedFromWishlist(id) {
-    const p = products.find(x => x.id === id);
-    if (!p) return;
-    p.ordered = !p.ordered;
-    saveProducts();
-    renderWishlist();   // re-render panel langsung
-    renderAdmin();      // sinkron ke list admin
-    renderPublic();     // sinkron badge di halaman mama
-  }
-
-  function deleteProduct(id) {
+  async function handleDelete(id) {
     const p = products.find(x => x.id === id);
     if (!p || !confirm('Hapus produk ini?')) return;
-    products = products.filter(x => x.id !== id);
-    saveProducts();
+    await dbDelete(id);
     renderAdmin();
     renderPublic();
-    renderWishlist();
+    if (document.getElementById('wishlist-panel').classList.contains('open')) renderWishlist();
   }
 
   /* ─────────────────────────────────────
@@ -1379,30 +1051,20 @@
     const p = products.find(x => x.id === id);
     if (!p) return;
     detailId = id;
-
-    // Image
-    const wrap = document.getElementById('detail-img-wrap');
-    wrap.innerHTML = p.image
-      ? `<img src="${p.image}" alt="produk">`
-      : `<div class="no-img" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:72px;color:var(--pink);">🛍️</div>`;
-
-    // Prices
+    document.getElementById('detail-img-wrap').innerHTML = p.image_url
+      ? `<img src="${esc(p.image_url)}" alt="produk">`
+      : `<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:72px;color:var(--pink);">🛍️</div>`;
     document.getElementById('detail-cny').textContent = fmtYuan(p.price);
     document.getElementById('detail-idr').textContent = fmtIDR(p.price);
-
     updateDetailHeartBtn(p);
-
     document.getElementById('detail-modal').classList.add('active');
     document.body.style.overflow = 'hidden';
   }
 
   function updateDetailHeartBtn(p) {
-    const btn   = document.getElementById('detail-heart-btn');
-    const icon  = document.getElementById('detail-heart-icon');
-    const label = document.getElementById('detail-heart-label');
-    icon.textContent  = p.loved ? '❤️' : '🤍';
-    label.textContent = p.loved ? 'Di-wishlist' : 'Wishlist';
-    btn.className = 'detail-heart-btn' + (p.loved ? ' loved' : '');
+    document.getElementById('detail-heart-icon').textContent  = p.loved ? '❤️' : '🤍';
+    document.getElementById('detail-heart-label').textContent = p.loved ? 'Di-wishlist' : 'Wishlist';
+    document.getElementById('detail-heart-btn').className = 'detail-heart-btn' + (p.loved ? ' loved' : '');
   }
 
   function closeDetail() {
@@ -1413,43 +1075,27 @@
 
   document.getElementById('detail-close').addEventListener('click', closeDetail);
   document.getElementById('detail-backdrop').addEventListener('click', closeDetail);
-
-  document.getElementById('detail-heart-btn').addEventListener('click', () => {
+  document.getElementById('detail-heart-btn').addEventListener('click', async () => {
     if (!detailId) return;
     const p = products.find(x => x.id === detailId);
     if (!p) return;
-    p.loved = !p.loved;
-    saveProducts();
+    const next = !p.loved;
+    p.loved = next;
     updateDetailHeartBtn(p);
-    // Animate
-    const btn = document.getElementById('detail-heart-btn');
-    btn.classList.add('popping');
-    btn.addEventListener('animationend', () => btn.classList.remove('popping'), { once: true });
-    // Update public card too
     const cardBtn = document.querySelector(`.heart-btn[data-id="${detailId}"]`);
-    if (cardBtn) {
-      cardBtn.textContent = p.loved ? '❤️' : '🤍';
-      cardBtn.className = 'heart-btn' + (p.loved ? ' loved' : '');
-    }
-    // If admin open
-    if (document.getElementById('admin-view').classList.contains('active')) {
-      renderAdmin();
-      renderWishlist();
-    }
+    if (cardBtn) { cardBtn.textContent = next ? '❤️' : '🤍'; cardBtn.className = 'heart-btn' + (next ? ' loved' : ''); }
+    if (document.getElementById('admin-view').classList.contains('active')) { renderAdmin(); updateWishlistBadge(); }
+    await dbUpdate(detailId, { loved: next });
   });
 
-  // Keyboard close
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      closeDetail();
-      closeWishlistPanel();
-    }
+    if (e.key === 'Escape') { closeDetail(); closeWishlistPanel(); }
   });
 
   /* ─────────────────────────────────────
      WISHLIST PANEL
   ───────────────────────────────────── */
-  function openWishlistPanel() {
+  function openWishlistPanel()  {
     renderWishlist();
     document.getElementById('wishlist-panel').classList.add('open');
     document.getElementById('wishlist-backdrop').classList.add('show');
@@ -1458,22 +1104,21 @@
     document.getElementById('wishlist-panel').classList.remove('open');
     document.getElementById('wishlist-backdrop').classList.remove('show');
   }
-
   document.getElementById('wishlist-toggle-btn').addEventListener('click', openWishlistPanel);
   document.getElementById('wishlist-close-btn').addEventListener('click', closeWishlistPanel);
   document.getElementById('wishlist-backdrop').addEventListener('click', closeWishlistPanel);
 
   /* ─────────────────────────────────────
-     IMAGE UPLOAD
+     IMAGE UPLOAD (preview only, upload on save)
   ───────────────────────────────────── */
-  function applyPreview(base64) {
-    pendingImage = base64;
+  function applyPreview(base64, file) {
+    pendingImage = base64; pendingFile = file;
     document.getElementById('upload-preview').src = base64;
     document.getElementById('upload-preview').classList.add('show');
     document.getElementById('upload-placeholder').classList.add('hidden');
   }
   function resetUpload() {
-    pendingImage = null;
+    pendingImage = null; pendingFile = null;
     document.getElementById('upload-preview').src = '';
     document.getElementById('upload-preview').classList.remove('show');
     document.getElementById('upload-placeholder').classList.remove('hidden');
@@ -1481,83 +1126,87 @@
   }
 
   document.getElementById('img-input').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; if (!file) return;
     const r = new FileReader();
-    r.onload = ev => applyPreview(ev.target.result);
+    r.onload = ev => applyPreview(ev.target.result, file);
     r.readAsDataURL(file);
   });
 
   const uploadArea = document.getElementById('upload-area');
-  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+  uploadArea.addEventListener('dragover',  e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
   uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
   uploadArea.addEventListener('drop', e => {
     e.preventDefault(); uploadArea.classList.remove('dragover');
     const file = e.dataTransfer.files[0];
     if (file?.type.startsWith('image/')) {
       const r = new FileReader();
-      r.onload = ev => applyPreview(ev.target.result);
+      r.onload = ev => applyPreview(ev.target.result, file);
       r.readAsDataURL(file);
     }
   });
 
   /* ─────────────────────────────────────
-     RATE SETTING
+     RATE
   ───────────────────────────────────── */
   function loadRateInput() {
     if (settings.rate) document.getElementById('rate-input').value = settings.rate;
   }
 
-  document.getElementById('rate-save-btn').addEventListener('click', () => {
-    const val = parseFloat(document.getElementById('rate-input').value);
-    if (!val || val < 1) return;
-    settings.rate = val;
-    saveSettings();
-    renderPublic();
-    renderAdmin();
-    renderWishlist();
-    updateIDRPreview();
-    const msg = document.getElementById('rate-saved-msg');
-    msg.classList.add('show');
-    setTimeout(() => msg.classList.remove('show'), 2000);
-  });
-
-  // Live IDR preview in add form
-  function updateIDRPreview() {
+  document.getElementById('prod-price').addEventListener('input', () => {
     const price = parseFloat(document.getElementById('prod-price').value);
     const wrap  = document.getElementById('idr-preview-wrap');
-    const input = document.getElementById('idr-preview');
     if (settings.rate && price > 0) {
       wrap.style.display = '';
-      input.value = fmtIDR(price);
+      document.getElementById('idr-preview').value = fmtIDR(price);
     } else {
       wrap.style.display = 'none';
     }
-  }
-  document.getElementById('prod-price').addEventListener('input', updateIDRPreview);
+  });
+
+  document.getElementById('rate-save-btn').addEventListener('click', async () => {
+    const val = parseFloat(document.getElementById('rate-input').value);
+    if (!val || val < 1) return;
+    const btn = document.getElementById('rate-save-btn');
+    btn.classList.add('saving');
+    const ok = await dbSaveSetting('rate', val);
+    btn.classList.remove('saving');
+    if (ok) {
+      renderPublic(); renderAdmin();
+      if (document.getElementById('wishlist-panel').classList.contains('open')) renderWishlist();
+      const msg = document.getElementById('rate-saved-msg');
+      msg.classList.add('show');
+      setTimeout(() => msg.classList.remove('show'), 2000);
+    }
+  });
 
   /* ─────────────────────────────────────
      ADD PRODUCT
   ───────────────────────────────────── */
-  function flashError(el) {
-    el.classList.add('error');
-    el.focus();
-    setTimeout(() => el.classList.remove('error'), 1600);
-  }
-
-  document.getElementById('add-btn').addEventListener('click', () => {
+  document.getElementById('add-btn').addEventListener('click', async () => {
     const priceEl = document.getElementById('prod-price');
     const price   = priceEl.value.trim();
-    if (!price) { flashError(priceEl); return; }
+    if (!price) { priceEl.classList.add('error'); priceEl.focus(); setTimeout(() => priceEl.classList.remove('error'), 1500); return; }
 
-    products.push({ id: uid(), price, image: pendingImage, ordered: false, loved: false });
-    saveProducts();
-    renderPublic();
-    renderAdmin();
+    const btn    = document.getElementById('add-btn');
+    const status = document.getElementById('add-status');
+    btn.disabled  = true;
+    btn.textContent = '⏳ Menyimpan...';
+    status.textContent = pendingFile ? 'Mengupload foto...' : '';
 
-    priceEl.value = '';
-    resetUpload();
-    updateIDRPreview();
+    const ok = await dbAddProduct(price, pendingFile);
+
+    btn.disabled    = false;
+    btn.textContent = '＋ Simpan Produk';
+    status.textContent = '';
+
+    if (ok) {
+      renderPublic(); renderAdmin();
+      priceEl.value = '';
+      resetUpload();
+      document.getElementById('idr-preview-wrap').style.display = 'none';
+    } else {
+      status.textContent = '⚠️ Gagal menyimpan. Coba lagi.';
+    }
   });
 
   /* ─────────────────────────────────────
@@ -1577,27 +1226,21 @@
   function goAdmin() {
     document.getElementById('public-view').style.display = 'none';
     document.getElementById('admin-view').classList.add('active');
-    loadRateInput();
-    renderAdmin();
+    loadRateInput(); renderAdmin();
   }
   function goPublic() {
     document.getElementById('public-view').style.display = '';
     document.getElementById('admin-view').classList.remove('active');
-    closeWishlistPanel();
-    renderPublic();
+    closeWishlistPanel(); renderPublic();
   }
 
   function attemptLogin() {
     const u = document.getElementById('login-user').value;
     const p = document.getElementById('login-pass').value;
-    if (u === CREDS.user && p === CREDS.pass) {
-      hideLoginModal();
-      goAdmin();
-    } else {
+    if (u === CREDS.user && p === CREDS.pass) { hideLoginModal(); goAdmin(); }
+    else {
       const err = document.getElementById('login-error');
-      err.classList.remove('show');
-      void err.offsetWidth;
-      err.classList.add('show');
+      err.classList.remove('show'); void err.offsetWidth; err.classList.add('show');
       document.getElementById('login-pass').value = '';
       document.getElementById('login-pass').focus();
     }
@@ -1616,17 +1259,12 @@
   ───────────────────────────────────── */
   const duckWrap   = document.getElementById('duck-wrap');
   const duckSpeech = document.getElementById('duck-speech');
-
-  const quacks = [
-    'hmph! 🌸', 'beli dooong~ 🛍️', 'kapan diorder nih? 🦆',
-    'aku tunggu ya! 💕', 'kwek kwek!! 💛', 'eh itu bagus tuh! 👆',
-    'mau yang itu~ 🥺', 'udah lama nunggu nih 😤',
-  ];
-  let quackIdx = 0, speechTimer;
+  const quacks     = ['hmph! 🌸','beli dooong~ 🛍️','kapan diorder nih? 🦆','aku tunggu ya! 💕','kwek kwek!! 💛','eh itu bagus tuh! 👆','mau yang itu~ 🥺','udah lama nunggu nih 😤'];
+  let qi = 0, speechTimer;
 
   function duckQuack() {
     clearTimeout(speechTimer);
-    duckSpeech.textContent = quacks[quackIdx++ % quacks.length];
+    duckSpeech.textContent = quacks[qi++ % quacks.length];
     duckSpeech.classList.add('visible');
     duckWrap.classList.remove('shaking');
     void duckWrap.offsetWidth;
@@ -1640,7 +1278,14 @@
   /* ─────────────────────────────────────
      INIT
   ───────────────────────────────────── */
-  renderPublic();
+  async function init() {
+    await dbLoad();
+    hideLoader();
+    renderPublic();
+    initRealtime();
+  }
+
+  init();
 </script>
 </body>
 </html>
