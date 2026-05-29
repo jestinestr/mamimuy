@@ -1019,7 +1019,7 @@
             <input type="checkbox" ${p.ordered ? 'checked' : ''}
               onchange="handleToggleOrdered('${p.id}', this.checked)"> Sudah dibeli
           </label>
-          <button class="btn-delete" onclick="handleDelete('${p.id}')" title="Hapus">🗑️</button>
+          <button class="btn-delete" onclick="handleDelete('${p.id}',this)" title="Hapus">🗑️</button>
         </div>
       </div>`).join('');
   }
@@ -1089,6 +1089,7 @@
 
   async function handleToggleOrdered(id, checked) {
     await dbUpdate(id, { ordered: checked });
+    await yieldToMain();
     renderAdmin();
     renderPublic();
     if (document.getElementById('wishlist-panel').classList.contains('open')) renderWishlist();
@@ -1098,15 +1099,41 @@
     const p = products.find(x => x.id === id);
     if (!p) return;
     await dbUpdate(id, { ordered: !p.ordered });
+    await yieldToMain();
     renderWishlist();
     renderAdmin();
     renderPublic();
   }
 
-  async function handleDelete(id) {
-    const p = products.find(x => x.id === id);
-    if (!p || !confirm('Hapus produk ini?')) return;
+  // yield to browser before heavy work → fixes INP
+  const yieldToMain = () => new Promise(r => setTimeout(r, 0));
+
+  async function handleDelete(id, btn) {
+    // First click: enter confirm state (no blocking dialog)
+    if (!btn.dataset.confirming) {
+      btn.dataset.confirming = '1';
+      btn.textContent = '✓?';
+      btn.title = 'Klik lagi untuk hapus';
+      btn.style.cssText = 'background:#FFD6D6;border-color:#D46868;color:#B03030;width:44px;font-weight:800';
+      // Auto-reset after 3s if user ignores
+      setTimeout(() => {
+        if (!btn.dataset.confirming) return;
+        delete btn.dataset.confirming;
+        btn.textContent = '🗑️';
+        btn.title = 'Hapus';
+        btn.style.cssText = '';
+      }, 3000);
+      return;
+    }
+
+    // Second click: confirmed — yield first so browser can paint the button reset
+    delete btn.dataset.confirming;
+    btn.textContent = '⏳';
+    btn.style.cssText = 'opacity:.5;pointer-events:none';
+
+    await yieldToMain();
     await dbDelete(id);
+    await yieldToMain();
     renderAdmin();
     renderPublic();
     if (document.getElementById('wishlist-panel').classList.contains('open')) renderWishlist();
