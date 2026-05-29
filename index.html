@@ -793,6 +793,42 @@
     .wishlist-item-price { font-weight: 700; font-size: 15px; }
     .wishlist-item-idr { font-size: 11.5px; color: var(--text-light); margin-top: 1px; }
 
+    .btn-bought {
+      flex-shrink: 0;
+      padding: 7px 11px;
+      border-radius: 10px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 11.5px; font-weight: 700;
+      cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; gap: 5px;
+      white-space: nowrap;
+    }
+    .btn-bought.pending {
+      background: white;
+      border: 1.5px solid var(--border);
+      color: var(--text-light);
+    }
+    .btn-bought.pending:hover {
+      border-color: var(--green); color: #5a9e5a;
+      background: var(--green-bg);
+    }
+    .btn-bought.done {
+      background: var(--green-bg);
+      border: 1.5px solid var(--green);
+      color: #4a8e4a;
+    }
+    .btn-bought.done:hover {
+      background: #ddf0dd;
+    }
+
+    .wishlist-item.bought {
+      opacity: .62;
+    }
+    .wishlist-item.bought .wishlist-item-price {
+      text-decoration: line-through;
+      color: var(--text-light);
+    }
+
     .wishlist-empty {
       text-align: center; padding: 48px 16px;
       color: var(--text-light);
@@ -1244,8 +1280,9 @@
     const list  = document.getElementById('wishlist-list');
     const footer= document.getElementById('wishlist-footer-text');
 
+    const boughtCount = loved.filter(p => p.ordered).length;
     footer.textContent = loved.length
-      ? `${loved.length} item dipinginkan mama 💕`
+      ? `${boughtCount}/${loved.length} sudah dibeliin 💕`
       : '0 item dipinginkan mama';
 
     if (!loved.length) {
@@ -1257,8 +1294,11 @@
       return;
     }
 
-    list.innerHTML = loved.map(p => `
-      <div class="wishlist-item">
+    // Sort: belum dibeli dulu, sudah dibeli di bawah
+    const sorted = [...loved].sort((a, b) => (a.ordered ? 1 : 0) - (b.ordered ? 1 : 0));
+
+    list.innerHTML = sorted.map(p => `
+      <div class="wishlist-item ${p.ordered ? 'bought' : ''}">
         ${p.image
           ? `<img class="wishlist-thumb" src="${p.image}" alt="produk">`
           : `<div class="wishlist-thumb-placeholder">🛍️</div>`}
@@ -1266,6 +1306,10 @@
           <div class="wishlist-item-price">${fmtYuan(p.price)}</div>
           ${settings.rate ? `<div class="wishlist-item-idr">${fmtIDR(p.price)}</div>` : ''}
         </div>
+        <button class="btn-bought ${p.ordered ? 'done' : 'pending'}"
+          onclick="toggleOrderedFromWishlist('${p.id}')">
+          ${p.ordered ? '✓ Dibeli' : '○ Beli'}
+        </button>
       </div>`).join('');
   }
 
@@ -1306,6 +1350,16 @@
     saveProducts();
     renderAdmin();
     renderPublic();
+  }
+
+  function toggleOrderedFromWishlist(id) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    p.ordered = !p.ordered;
+    saveProducts();
+    renderWishlist();   // re-render panel langsung
+    renderAdmin();      // sinkron ke list admin
+    renderPublic();     // sinkron badge di halaman mama
   }
 
   function deleteProduct(id) {
