@@ -392,41 +392,67 @@
     }
     .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-    .add-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    @media (max-width: 520px) { .add-form-grid { grid-template-columns: 1fr; } }
-
-    .img-upload-area {
-      grid-column: 1/-1; border: 2px dashed var(--border); border-radius: 14px;
-      padding: 22px 16px; text-align: center; cursor: pointer; transition: all .22s;
+    /* ── Multi-upload zone ── */
+    .multi-upload-zone {
+      border: 2px dashed var(--border); border-radius: 14px;
+      padding: 20px 16px; text-align: center; cursor: pointer; transition: all .22s;
       background: var(--bg); position: relative;
-      min-height: 108px; display: flex; align-items: center; justify-content: center;
+      min-height: 96px; display: flex; align-items: center; justify-content: center;
+      gap: 10px; flex-direction: column;
     }
-    .img-upload-area:hover, .img-upload-area.dragover { border-color: var(--pink-mid); background: var(--pink-light); }
-    .img-upload-area input[type="file"] {
+    .multi-upload-zone:hover, .multi-upload-zone.dragover { border-color: var(--pink-mid); background: var(--pink-light); }
+    .multi-upload-zone.full { opacity: .5; pointer-events: none; }
+    .multi-upload-zone input[type="file"] {
       position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
     }
-    .upload-inner { pointer-events: none; }
-    .upload-preview {
-      width: 86px; height: 86px; object-fit: cover; border-radius: 10px;
-      display: none; margin-bottom: 6px; box-shadow: 0 2px 10px rgba(0,0,0,.10);
-    }
-    .upload-preview.show { display: inline-block; }
-    .upload-icon { font-size: 32px; color: var(--pink); margin-bottom: 6px; }
-    .upload-text { font-size: 13px; color: var(--text-light); line-height: 1.6; }
+    .upload-icon { font-size: 30px; color: var(--pink); pointer-events: none; }
+    .upload-text { font-size: 13px; color: var(--text-light); line-height: 1.6; pointer-events: none; }
     .upload-text strong { color: var(--pink-dark); }
-
-    .add-form-grid .form-group label {
-      display: block; font-size: 11px; font-weight: 700; color: var(--text-light);
-      margin-bottom: 6px; letter-spacing: .1em; text-transform: uppercase;
+    .upload-counter {
+      font-size: 11.5px; font-weight: 700; color: var(--pink-mid);
+      background: var(--pink-light); border-radius: 10px; padding: 2px 10px;
+      pointer-events: none;
     }
-    .add-form-grid .form-group input {
-      width: 100%; padding: 11px 14px; border: 1.5px solid var(--border);
-      border-radius: 12px; font-family: 'Nunito', sans-serif;
-      font-size: 14px; color: var(--text); background: var(--bg); outline: none;
+
+    /* ── Product slots ── */
+    .product-slots {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 12px; margin-top: 14px;
+    }
+    @media (max-width: 420px) { .product-slots { grid-template-columns: repeat(2, 1fr); } }
+
+    .product-slot {
+      background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+      animation: popIn .22s cubic-bezier(.34,1.36,.64,1);
+    }
+    .slot-img-wrap { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--pink-light); }
+    .slot-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .slot-remove {
+      position: absolute; top: 6px; right: 6px;
+      width: 26px; height: 26px;
+      background: rgba(0,0,0,.48); border: none; border-radius: 50%;
+      color: white; font-size: 12px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .slot-remove:hover { background: rgba(200,50,50,.75); }
+
+    .slot-body { padding: 10px 12px 12px; }
+    .slot-body label {
+      display: block; font-size: 10px; font-weight: 700; color: var(--text-light);
+      text-transform: uppercase; letter-spacing: .09em; margin-bottom: 5px;
+    }
+    .slot-price {
+      width: 100%; padding: 9px 10px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-family: 'Nunito', sans-serif;
+      font-size: 14px; color: var(--text); background: white; outline: none;
       transition: border-color .2s, box-shadow .2s;
     }
-    .add-form-grid .form-group input:focus { border-color: var(--pink); box-shadow: 0 0 0 3px rgba(232,180,184,.22); }
-    .add-form-grid .form-group input.error { border-color: var(--red) !important; }
+    .slot-price:focus { border-color: var(--pink); box-shadow: 0 0 0 3px rgba(232,180,184,.20); }
+    .slot-price.error { border-color: var(--red) !important; }
+    .slot-idr { font-size: 11px; color: var(--text-light); font-weight: 500; margin-top: 4px; min-height: 15px; }
 
     .add-form-footer { margin-top: 16px; display: flex; justify-content: flex-end; gap: 10px; align-items: center; }
     .add-status { font-size: 13px; color: var(--text-light); }
@@ -795,29 +821,16 @@
 
     <div class="add-product-card">
       <h2 class="section-title">Tambah Produk</h2>
-      <div class="add-form-grid">
-        <div class="img-upload-area" id="upload-area">
-          <input type="file" id="img-input" accept="image/*">
-          <div class="upload-inner">
-            <img class="upload-preview" id="upload-preview" alt="Preview">
-            <div id="upload-placeholder">
-              <div class="upload-icon">🖼️</div>
-              <div class="upload-text"><strong>Klik atau seret foto</strong> ke sini<br><small>JPG · PNG · WEBP</small></div>
-            </div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="prod-price">Harga (Yuan ¥)</label>
-          <input type="number" id="prod-price" placeholder="cth. 150" min="0" step="0.01">
-        </div>
-        <div class="form-group" id="idr-preview-wrap" style="display:none">
-          <label>Estimasi IDR</label>
-          <input type="text" id="idr-preview" readonly style="background:#f9f5f5;cursor:default;">
-        </div>
+      <div class="multi-upload-zone" id="multi-upload-zone">
+        <input type="file" id="img-input" accept="image/*" multiple>
+        <div class="upload-icon">🖼️</div>
+        <div class="upload-text"><strong>Klik atau seret foto</strong><br><small>Maks 3 foto · JPG · PNG · WEBP</small></div>
+        <span class="upload-counter" id="upload-counter">0 / 3</span>
       </div>
+      <div class="product-slots" id="product-slots"></div>
       <div class="add-form-footer">
         <span class="add-status" id="add-status"></span>
-        <button class="btn-add" id="add-btn">＋ Simpan Produk</button>
+        <button class="btn-add" id="add-btn" disabled>＋ Simpan Produk</button>
       </div>
     </div>
 
@@ -859,8 +872,8 @@
   let products  = [];
   let settings  = {};        // { rate: "2200" }
   let detailId  = null;
-  let pendingFile  = null;   // File object for Supabase Storage upload
-  let pendingImage = null;   // base64 for preview only
+  let pendingSlots = [];     // [{ file, preview, price }] — max 3
+  const MAX_SLOTS  = 3;
 
   /* ─────────────────────────────────────
      HELPERS
@@ -1250,40 +1263,72 @@
   document.getElementById('wishlist-backdrop').addEventListener('click', closeWishlistPanel);
 
   /* ─────────────────────────────────────
-     IMAGE UPLOAD (preview only, upload on save)
+     MULTI-SLOT UPLOAD
   ───────────────────────────────────── */
-  function applyPreview(base64, file) {
-    pendingImage = base64; pendingFile = file;
-    document.getElementById('upload-preview').src = base64;
-    document.getElementById('upload-preview').classList.add('show');
-    document.getElementById('upload-placeholder').classList.add('hidden');
+  function renderSlots() {
+    const zone    = document.getElementById('multi-upload-zone');
+    const slotsCt = document.getElementById('product-slots');
+    const counter = document.getElementById('upload-counter');
+    const addBtn  = document.getElementById('add-btn');
+
+    counter.textContent = `${pendingSlots.length} / ${MAX_SLOTS}`;
+    zone.classList.toggle('full', pendingSlots.length >= MAX_SLOTS);
+    addBtn.disabled = pendingSlots.length === 0;
+
+    if (!pendingSlots.length) { slotsCt.innerHTML = ''; return; }
+
+    slotsCt.innerHTML = pendingSlots.map((s, i) => `
+      <div class="product-slot">
+        <div class="slot-img-wrap">
+          <img src="${s.preview}" alt="Foto ${i + 1}">
+          <button class="slot-remove" onclick="removeSlot(${i})">✕</button>
+        </div>
+        <div class="slot-body">
+          <label>Harga (Yuan ¥)</label>
+          <input class="slot-price" type="number" placeholder="cth. 150" min="0" step="0.01"
+            value="${esc(s.price || '')}"
+            oninput="updateSlotPrice(${i}, this.value)">
+          <div class="slot-idr">${s.price && settings.rate ? fmtIDR(s.price) : ''}</div>
+        </div>
+      </div>`).join('');
   }
-  function resetUpload() {
-    pendingImage = null; pendingFile = null;
-    document.getElementById('upload-preview').src = '';
-    document.getElementById('upload-preview').classList.remove('show');
-    document.getElementById('upload-placeholder').classList.remove('hidden');
-    document.getElementById('img-input').value = '';
+
+  function removeSlot(idx) {
+    pendingSlots.splice(idx, 1);
+    renderSlots();
+  }
+
+  function updateSlotPrice(idx, val) {
+    if (!pendingSlots[idx]) return;
+    pendingSlots[idx].price = val;
+    const idrEls = document.querySelectorAll('.slot-idr');
+    if (idrEls[idx]) idrEls[idx].textContent = val && settings.rate ? fmtIDR(val) : '';
+  }
+
+  function addFilesToSlots(files) {
+    const imgFiles  = [...files].filter(f => f.type.startsWith('image/'));
+    const remaining = MAX_SLOTS - pendingSlots.length;
+    imgFiles.slice(0, remaining).forEach(file => {
+      const r = new FileReader();
+      r.onload = ev => {
+        pendingSlots.push({ file, preview: ev.target.result, price: '' });
+        renderSlots();
+      };
+      r.readAsDataURL(file);
+    });
   }
 
   document.getElementById('img-input').addEventListener('change', function(e) {
-    const file = e.target.files[0]; if (!file) return;
-    const r = new FileReader();
-    r.onload = ev => applyPreview(ev.target.result, file);
-    r.readAsDataURL(file);
+    addFilesToSlots(e.target.files);
+    e.target.value = ''; // allow re-picking same file
   });
 
-  const uploadArea = document.getElementById('upload-area');
-  uploadArea.addEventListener('dragover',  e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
-  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
-  uploadArea.addEventListener('drop', e => {
-    e.preventDefault(); uploadArea.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file?.type.startsWith('image/')) {
-      const r = new FileReader();
-      r.onload = ev => applyPreview(ev.target.result, file);
-      r.readAsDataURL(file);
-    }
+  const uploadZone = document.getElementById('multi-upload-zone');
+  uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault(); uploadZone.classList.remove('dragover');
+    addFilesToSlots(e.dataTransfer.files);
   });
 
   /* ─────────────────────────────────────
@@ -1293,17 +1338,6 @@
     if (settings.rate) document.getElementById('rate-input').value = settings.rate;
   }
 
-  document.getElementById('prod-price').addEventListener('input', () => {
-    const price = parseFloat(document.getElementById('prod-price').value);
-    const wrap  = document.getElementById('idr-preview-wrap');
-    if (settings.rate && price > 0) {
-      wrap.style.display = '';
-      document.getElementById('idr-preview').value = fmtIDR(price);
-    } else {
-      wrap.style.display = 'none';
-    }
-  });
-
   document.getElementById('rate-save-btn').addEventListener('click', async () => {
     const val = parseFloat(document.getElementById('rate-input').value);
     if (!val || val < 1) return;
@@ -1312,7 +1346,7 @@
     const ok = await dbSaveSetting('rate', val);
     btn.classList.remove('saving');
     if (ok) {
-      renderPublic(); renderAdmin();
+      renderPublic(); renderAdmin(); renderSlots();
       if (document.getElementById('wishlist-panel').classList.contains('open')) renderWishlist();
       const msg = document.getElementById('rate-saved-msg');
       msg.classList.add('show');
@@ -1321,30 +1355,48 @@
   });
 
   /* ─────────────────────────────────────
-     ADD PRODUCT
+     ADD PRODUCT (multi-slot)
   ───────────────────────────────────── */
   document.getElementById('add-btn').addEventListener('click', async () => {
-    const priceEl = document.getElementById('prod-price');
-    const price   = priceEl.value.trim();
-    if (!price) { priceEl.classList.add('error'); priceEl.focus(); setTimeout(() => priceEl.classList.remove('error'), 1500); return; }
+    if (!pendingSlots.length) return;
+
+    // Validate all prices first
+    let valid = true;
+    document.querySelectorAll('.slot-price').forEach((el, i) => {
+      const s = pendingSlots[i];
+      if (!s?.price || parseFloat(s.price) <= 0) {
+        valid = false;
+        el.classList.add('error');
+        el.focus();
+        setTimeout(() => el.classList.remove('error'), 1800);
+      }
+    });
+    if (!valid) return;
 
     const btn    = document.getElementById('add-btn');
     const status = document.getElementById('add-status');
-    btn.disabled  = true;
+    btn.disabled    = true;
     btn.textContent = '⏳ Menyimpan...';
-    status.textContent = pendingFile ? 'Mengupload foto...' : '';
 
-    const ok = await dbAddProduct(price, pendingFile);
+    const total    = pendingSlots.length;
+    const snapshot = [...pendingSlots]; // copy so splice doesn't affect loop
+    let saved = 0;
+
+    for (const slot of snapshot) {
+      status.textContent = `Menyimpan ${saved + 1} / ${total}...`;
+      const ok = await dbAddProduct(slot.price, slot.file);
+      if (ok) saved++;
+    }
 
     btn.disabled    = false;
     btn.textContent = '＋ Simpan Produk';
-    status.textContent = '';
 
-    if (ok) {
+    if (saved > 0) {
+      pendingSlots = [];
+      renderSlots();
       renderPublic(); renderAdmin();
-      priceEl.value = '';
-      resetUpload();
-      document.getElementById('idr-preview-wrap').style.display = 'none';
+      status.textContent = saved < total ? `⚠️ ${saved}/${total} berhasil disimpan` : `✓ ${saved} produk tersimpan!`;
+      setTimeout(() => { status.textContent = ''; }, 2400);
     } else {
       status.textContent = '⚠️ Gagal menyimpan. Coba lagi.';
     }
