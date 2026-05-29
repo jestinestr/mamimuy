@@ -658,6 +658,211 @@
     }
 
     .hidden { display: none !important; }
+
+    /* ─── UPSET DUCK MASCOT ─── */
+    .duck-container {
+      position: fixed;
+      bottom: 14px;
+      left: 14px;
+      z-index: 48;
+      user-select: none;
+    }
+
+    .duck-wrap {
+      position: relative;
+      width: 82px;
+      height: 88px;
+      cursor: pointer;
+      animation: duck-bob 2.8s ease-in-out infinite;
+      filter: drop-shadow(0 5px 10px rgba(0,0,0,0.13));
+      transition: filter 0.2s;
+    }
+    .duck-wrap:hover  { filter: drop-shadow(0 8px 16px rgba(0,0,0,0.18)); }
+    .duck-wrap:active { transform: scale(0.92); }
+    .duck-wrap.shaking { animation: duck-shake 0.34s ease-in-out 3 !important; }
+
+    @keyframes duck-bob {
+      0%,100% { transform: translateY(0)   rotate(0deg);  }
+      35%      { transform: translateY(-9px) rotate(-2deg); }
+      65%      { transform: translateY(-5px) rotate(1deg);  }
+    }
+    @keyframes duck-shake {
+      0%,100% { transform: rotate(-10deg) translateY(-4px); }
+      50%      { transform: rotate(10deg)  translateY(-4px); }
+    }
+
+    /* Body */
+    .d-body {
+      position: absolute;
+      bottom: 14px;
+      left: 2px;
+      width: 64px;
+      height: 46px;
+      background: #FFD93D;
+      border-radius: 46% 54% 54% 46% / 45% 45% 55% 55%;
+    }
+    /* Tail (back/left side) */
+    .d-body::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 24px;
+      background: #FFD93D;
+      border-radius: 50% 20% 20% 50% / 60% 40% 60% 40%;
+      left: -10px;
+      top: -7px;
+      transform: rotate(-18deg);
+    }
+    /* Wing */
+    .d-body::after {
+      content: '';
+      position: absolute;
+      width: 30px;
+      height: 18px;
+      background: #EFC200;
+      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+      right: 8px;
+      top: 13px;
+      transform: rotate(4deg);
+    }
+
+    /* Head */
+    .d-head {
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      width: 38px;
+      height: 36px;
+      background: #FFD93D;
+      border-radius: 50%;
+      z-index: 2;
+    }
+
+    /* Eye (single — side view) */
+    .d-eye {
+      position: absolute;
+      width: 9px;
+      height: 9px;
+      background: #1E1830;
+      border-radius: 50%;
+      top: 12px;
+      right: 5px;
+    }
+    .d-eye::after {
+      content: '';
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: rgba(255,255,255,0.88);
+      border-radius: 50%;
+      top: 1px;
+      left: 1px;
+    }
+
+    /* Eyebrows — pouty V shape above eye */
+    .d-brow-l, .d-brow-r {
+      position: absolute;
+      height: 2.5px;
+      width: 9px;
+      background: #C89800;
+      border-radius: 3px;
+      top: 5px;
+    }
+    .d-brow-l {
+      right: 13px;
+      transform-origin: right center;
+      transform: rotate(22deg);
+    }
+    .d-brow-r {
+      right: 4px;
+      transform-origin: left center;
+      transform: rotate(-22deg);
+    }
+
+    /* Beak — flat/pouty */
+    .d-beak {
+      position: absolute;
+      right: -17px;
+      top: 16px;
+      width: 20px;
+      height: 13px;
+      background: #FF8C42;
+      border-radius: 2px 8px 8px 2px;
+    }
+    /* Mouth line with slight frown */
+    .d-beak::before {
+      content: '';
+      position: absolute;
+      width: 90%;
+      height: 2px;
+      background: #D06820;
+      top: 48%;
+      left: 5%;
+      border-radius: 0 0 8px 8px;
+      transform: scaleY(1.5);
+    }
+    /* Nostril dot */
+    .d-beak::after {
+      content: '';
+      position: absolute;
+      width: 4px;
+      height: 3px;
+      background: #D06820;
+      border-radius: 50%;
+      top: 3px;
+      right: 5px;
+    }
+
+    /* Cheek blush */
+    .d-blush {
+      position: absolute;
+      width: 12px;
+      height: 7px;
+      background: rgba(255, 160, 140, 0.45);
+      border-radius: 50%;
+      bottom: 8px;
+      right: 4px;
+    }
+
+    /* Feet */
+    .d-feet {
+      position: absolute;
+      bottom: 0;
+      left: 18px;
+      display: flex;
+      gap: 10px;
+    }
+    .d-foot {
+      width: 18px;
+      height: 8px;
+      background: #FF8C42;
+      border-radius: 50% 50% 55% 55% / 30% 30% 70% 70%;
+    }
+
+    /* Speech bubble */
+    .duck-speech {
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 0;
+      background: #fff;
+      border: 1.5px solid #EDE0DC;
+      border-radius: 14px 14px 14px 3px;
+      padding: 7px 14px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #3D3535;
+      white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(10px) scale(0.82);
+      transition: all 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
+    }
+    .duck-speech.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   </style>
 </head>
 <body>
@@ -677,6 +882,25 @@
   </div>
 
   <button id="lock-btn" title="Admin" aria-label="Admin login">🔒</button>
+
+  <!-- Upset duck mascot -->
+  <div class="duck-container">
+    <div class="duck-speech" id="duck-speech">hmph! 🌸</div>
+    <div class="duck-wrap" id="duck-wrap">
+      <div class="d-head">
+        <div class="d-brow-l"></div>
+        <div class="d-brow-r"></div>
+        <div class="d-eye"></div>
+        <div class="d-beak"></div>
+        <div class="d-blush"></div>
+      </div>
+      <div class="d-body"></div>
+      <div class="d-feet">
+        <div class="d-foot"></div>
+        <div class="d-foot"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 
@@ -1046,6 +1270,45 @@
   document.getElementById('login-modal').addEventListener('click', function (e) {
     if (e.target === this) hideLoginModal();
   });
+
+  /* ─────────────────────────────────────
+     DUCK
+  ───────────────────────────────────── */
+  const duckWrap   = document.getElementById('duck-wrap');
+  const duckSpeech = document.getElementById('duck-speech');
+
+  const quacks = [
+    'hmph! 🌸',
+    'beli dooong~ 🛍️',
+    'kapan diorder nih? 🦆',
+    'aku tunggu ya! 💕',
+    'kwek kwek!! 💛',
+    'eh itu bagus tuh! 👆',
+    'mau yang itu~ 🥺',
+    'udah lama nunggu nih 😤',
+  ];
+  let quackIdx = 0;
+  let speechTimer;
+
+  function duckQuack() {
+    clearTimeout(speechTimer);
+    duckSpeech.textContent = quacks[quackIdx % quacks.length];
+    quackIdx++;
+    duckSpeech.classList.add('visible');
+    duckWrap.classList.remove('shaking');
+    void duckWrap.offsetWidth; // reflow to restart animation
+    duckWrap.classList.add('shaking');
+    duckWrap.addEventListener('animationend', () => {
+      duckWrap.classList.remove('shaking');
+    }, { once: true });
+    clearTimeout(speechTimer);
+    speechTimer = setTimeout(() => duckSpeech.classList.remove('visible'), 2600);
+  }
+
+  duckWrap.addEventListener('click', duckQuack);
+
+  // Auto-quack once after 4s to draw attention
+  setTimeout(duckQuack, 4000);
 
   /* ─────────────────────────────────────
      INIT
