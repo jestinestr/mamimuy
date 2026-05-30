@@ -129,9 +129,22 @@
       width: 100%; aspect-ratio: 1; overflow: hidden;
       background: var(--pink-light); position: relative;
     }
+    /* Shimmer skeleton while images load */
+    .product-card .img-wrap::before {
+      content: ''; position: absolute; inset: 0; z-index: 1;
+      background: linear-gradient(90deg, var(--pink-light) 25%, #fff4f4 50%, var(--pink-light) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      pointer-events: none;
+    }
+    .product-card .img-wrap.loaded::before { display: none; }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
     .product-card img {
       width: 100%; height: 100%; object-fit: cover; display: block;
-      transition: transform .35s ease;
+      transition: transform .35s ease; position: relative; z-index: 2;
     }
     .product-card .no-img {
       width: 100%; height: 100%;
@@ -893,6 +906,28 @@
     return d.innerHTML;
   }
 
+  /* Compress image before upload → from 4-8 MB → ~200-400 KB */
+  function compressImage(file, maxPx = 1400, quality = 0.82) {
+    return new Promise(resolve => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (width > maxPx || height > maxPx) {
+          if (width >= height) { height = Math.round(height * maxPx / width);  width  = maxPx; }
+          else                 { width  = Math.round(width  * maxPx / height); height = maxPx; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob(blob => resolve(blob ?? file), 'image/jpeg', quality);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+
   /* ─────────────────────────────────────
      LOADING UI
   ───────────────────────────────────── */
@@ -920,10 +955,10 @@
     let image_url = null;
 
     if (file) {
-      const ext  = file.name.split('.').pop().toLowerCase();
-      const path = `${uid()}.${ext}`;
+      const compressed = await compressImage(file); // resize + jpeg compress
+      const path = `${uid()}.jpg`;
       const { error: upErr } = await sb.storage
-        .from('mama').upload(path, file, { contentType: file.type });
+        .from('mama').upload(path, compressed, { contentType: 'image/jpeg' });
       if (!upErr) {
         image_url = sb.storage.from('mama').getPublicUrl(path).data.publicUrl;
       }
@@ -1012,9 +1047,9 @@
     grid.innerHTML = products.map(p => `
       <div class="product-card" data-id="${p.id}">
         ${p.ordered ? '<div class="ordered-badge">✓ Sudah Diorder</div>' : ''}
-        <div class="img-wrap">
+        <div class="img-wrap" data-wrap>
           ${p.image_url
-            ? `<img src="${esc(p.image_url)}" alt="produk" loading="lazy">`
+            ? `<img src="${esc(p.image_url)}" alt="produk" loading="lazy" decoding="async">`
             : `<div class="no-img">🛍️</div>`}
           <button class="heart-btn ${p.loved ? 'loved' : ''}" data-id="${p.id}">
             ${p.loved ? '❤️' : '🤍'}
@@ -1025,6 +1060,12 @@
           ${settings.rate ? `<div class="card-price-idr">${fmtIDR(p.price)}</div>` : ''}
         </div>
       </div>`).join('');
+
+    // Remove shimmer once each image loads
+    grid.querySelectorAll('.img-wrap img').forEach(img => {
+      if (img.complete) img.closest('.img-wrap').classList.add('loaded');
+      else img.addEventListener('load', () => img.closest('.img-wrap').classList.add('loaded'), { once: true });
+    });
 
     grid.querySelectorAll('.img-wrap').forEach(wrap => {
       wrap.addEventListener('click', e => {
@@ -1052,7 +1093,7 @@
     list.innerHTML = products.map(p => `
       <div class="admin-product-item ${p.ordered ? 'ordered' : ''}">
         ${p.image_url
-          ? `<img class="admin-thumb" src="${esc(p.image_url)}" alt="produk">`
+          ? `<img class="admin-thumb" src="${esc(p.image_url)}" alt="produk" loading="lazy" decoding="async">`
           : `<div class="admin-thumb-placeholder">🛍️</div>`}
         <div class="admin-product-info">
           <div class="admin-product-price">${fmtYuan(p.price)}</div>
@@ -1088,7 +1129,7 @@
       <div class="wishlist-item ${p.ordered ? 'bought' : ''}">
         <div class="wishlist-item-clickable" onclick="openDetailFromWishlist('${p.id}')">
           ${p.image_url
-            ? `<img class="wishlist-thumb" src="${esc(p.image_url)}" alt="produk">`
+            ? `<img class="wishlist-thumb" src="${esc(p.image_url)}" alt="produk" loading="lazy" decoding="async">`
             : `<div class="wishlist-thumb-placeholder">🛍️</div>`}
           <div class="wishlist-item-info">
             <div class="wishlist-item-price">${fmtYuan(p.price)}</div>
